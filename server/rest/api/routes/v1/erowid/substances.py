@@ -15,13 +15,16 @@ def parse_dropdown_options(select: BeautifulSoup, category: str) -> List[Dict]:
         url = option.get('value', '')
         name = option.text.strip()
         
-        # Skip dividers and headers
-        if url == '#' or name.startswith('-') or name in ['Common Psychoactives', 'Main Index', 'Big Chart']:
+        # Skip dividers, headers and "other" items
+        if (url == '#' or 
+            name.startswith('-') or 
+            'other' in name.lower() or 
+            name in ['Common Psychoactives', 'Main Index', 'Big Chart']):
             continue
             
         substances.append({
             "name": name,
-            "url": f"https://www.erowid.org{url}" if url.startswith('/') else url,
+            "info_url": f"https://www.erowid.org{url}" if url.startswith('/') else url,
             "category": category
         })
     
