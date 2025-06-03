@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from core.config import settings
-from api.routes.v1 import base, erowid
+from api.routes.v1.erowid import substances
+from api.routes.v1 import base
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -18,4 +19,4 @@ app.add_middleware(
 
 # Include routers
 app.include_router(base.router, prefix=settings.API_V1_STR)
-app.include_router(erowid.router, prefix=settings.API_V1_STR)
+app.include_router(substances.router, prefix=settings.API_V1_STR)
