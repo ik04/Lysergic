@@ -24,8 +24,8 @@ def parse_dropdown_options(select: BeautifulSoup, category: str) -> List[Dict]:
             
         substances.append({
             "name": name,
+            "category": category,
             "info_url": f"https://www.erowid.org{url}" if url.startswith('/') else url,
-            "category": category
         })
     
     return substances
