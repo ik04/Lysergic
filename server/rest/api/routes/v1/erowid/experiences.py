@@ -113,7 +113,7 @@ async def fetch_experience_categories(url: str) -> dict:
             detail=f"Error parsing categories: {str(e)}"
         )
 
-@router.post("/erowid/experiences/")
+@router.post("/erowid/experiences/categories")
 async def fetch_experiences(request: FetchExperienceRequest):
     """
     Fetch experiences for a given substance URL.
