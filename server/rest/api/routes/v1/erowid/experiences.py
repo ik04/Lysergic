@@ -119,3 +119,8 @@ async def fetch_experience_details(request: FetchExperienceDetailsRequest):
                 "metadata": metadata
             }
         }
+@router.post("/erowid/random/experiences")
+async def fetch_random_experience(request: FetchExperienceRequest, size_per_substance: int = 1):
+    return {
+        "success": True,
+    }

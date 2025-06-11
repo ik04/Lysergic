@@ -60,7 +60,7 @@ async def check_experience_exists(url: str) -> tuple[bool, str]:
 async def fetch_experience_categories(url: str) -> dict:
     """
     Fetch and parse experience categories from the 'more' page
-    Returns: Dictionary with category names and their details
+    Returns: Dictionary with category names, URLs and experience counts
     """
     try:
         async with httpx.AsyncClient(verify=False, timeout=30.0) as client:
@@ -70,16 +70,14 @@ async def fetch_experience_categories(url: str) -> dict:
             soup = BeautifulSoup(response.text, 'html.parser')
             categories = {}
             
-            # Find all category headers (td with bgcolor="#002C00")
             category_headers = soup.find_all('td', bgcolor='#002C00')
             
             for header in category_headers:
-                # Get category row
                 row = header.find_parent('tr')
                 if not row:
                     continue
                 
-                # Find category name and link
+                # Get category link and name
                 category_link = row.find('a', {'href': True})
                 if not category_link:
                     continue
@@ -87,9 +85,20 @@ async def fetch_experience_categories(url: str) -> dict:
                 category_name = category_link.find('u').text.strip()
                 category_url = f"https://www.erowid.org/experiences/subs/{category_link['href']}"
                 
+                # Get experience count from third b tag within []
+                count_cells = row.find_all('b')
+                exp_count = 0
+                if len(count_cells) >= 3:  # Check if we have at least 3 b tags
+                    count_text = count_cells[2].text.strip('[]')  # Get third b tag
+                    try:
+                        exp_count = int(count_text)
+                    except ValueError:
+                        exp_count = 0
+                
                 categories[category_name] = {
                     "name": category_name,
                     "url": category_url,
+                    "experience_count": exp_count
                 }
             
             return categories
@@ -123,27 +132,22 @@ async def fetch_paginated_experiences(url: str, start: int = 0, max: int = 100) 
     """
     try:
         async with httpx.AsyncClient(verify=False, timeout=30.0) as client:
-            # First fetch the general page
             response = await client.get(url)
             response.raise_for_status()
             
             soup = BeautifulSoup(response.text, 'html.parser')
             
-            # Find the pagination table and next button
             pages_table = soup.find('table', class_='results-table')
             if not pages_table:
                 raise ValueError("Could not find results table")
                 
-            # Find next button - it's in the last TD with an A tag containing an IMG
             next_button = pages_table.find_all('td')[-1].find('a', href=True)
             if next_button:
-                # Extract base URL and parameters from next link
                 next_url = next_button['href']
                 base_url = next_url.split('?')[0]
                 params = {p.split('=')[0]: p.split('=')[1] 
                          for p in next_url.split('?')[1].split('&')}
                 
-                # Get category ID from params
                 category_id = params.get('S')
             else:
                 raise ValueError("Could not find pagination links")
@@ -151,20 +155,16 @@ async def fetch_paginated_experiences(url: str, start: int = 0, max: int = 100) 
             if not category_id:
                 raise ValueError("Invalid category URL - missing category ID") 
 
-            # Construct paginated URL with extracted base URL and params
             paginated_url = f"https://erowid.org{base_url}?S={category_id}&C=1&ShowViews=0&Cellar=0&Start={start}&Max={max}"
             
-            # Fetch the paginated results
             response = await client.get(paginated_url)
             response.raise_for_status()
             
             soup = BeautifulSoup(response.text, 'html.parser')
             
-            # Get total count
             total_text = soup.find('div', class_='exp-list-page-title-sub')
             total_count = int(total_text.text.strip('()').split()[0]) if total_text else 0
             
-            # Parse experiences
             experiences = []
             exp_rows = soup.find_all('tr', class_='exp-list-row')
             
@@ -197,7 +197,6 @@ async def fetch_paginated_experiences(url: str, start: int = 0, max: int = 100) 
                     "date": date
                 })
 
-            # Update pagination to use the proper URL structure
             next_start = start + max if start + max < total_count else None
             
             pagination = {
