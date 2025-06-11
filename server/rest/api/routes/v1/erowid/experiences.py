@@ -4,7 +4,8 @@ from bs4 import BeautifulSoup
 from api.models.fetch_experience_request import FetchExperienceRequest
 from api.models.fetch_experience_details_request import FetchExperienceDetailsRequest
 from api.models.fetch_category_experiences_request import FetchCategoryExperiencesRequest
-from api.utils.utils import check_experience_exists, fetch_experience_categories
+from api.utils.utils import check_experience_exists, fetch_experience_categories, fetch_paginated_experiences
+
 
 
 router = APIRouter()
@@ -42,88 +43,12 @@ async def fetch_category_experiences(request: FetchCategoryExperiencesRequest, s
         start: Starting index for pagination (default: 0)
         max: Maximum number of results per page (default: 100)
     """
-    try:
-        base_url = request.url.split('?')[0]
-        category_id = request.url.split('S=')[1].split('&')[0] if 'S=' in request.url else None
-        
-        if not category_id:
-            raise HTTPException(status_code=400, detail="Invalid category URL")
-            
-        paginated_url = f"{base_url}?S={category_id}&C=1&ShowViews=0&Cellar=0&Start={start}&Max={max}"
-        
-        async with httpx.AsyncClient(verify=False, timeout=30.0) as client:
-            response = await client.get(paginated_url)
-            if response.status_code != 200:
-                raise HTTPException(status_code=404, detail="Experience category not found")
-            
-            soup = BeautifulSoup(response.text, 'html.parser')
-            
-            total_text = soup.find('div', class_='exp-list-page-title-sub')
-            total_count = int(total_text.text.strip('()').split()[0]) if total_text else 0
-            
-            experiences = []
-            exp_rows = soup.find_all('tr', class_='exp-list-row')
-            
-            for row in exp_rows:
-                rating_img = row.find('img', alt=True)
-                rating = rating_img['alt'] if rating_img else "Unrated"
-                
-                title_cell = row.find('td', class_='exp-title')
-                if title_cell and title_cell.find('a'):
-                    title = title_cell.find('a').text
-                    exp_url = f"https://erowid.org{title_cell.find('a')['href']}"
-                else:
-                    continue
-                    
-                author_cell = row.find('td', class_='exp-author')
-                author = author_cell.text.strip() if author_cell else None
-                
-                substance_cell = row.find('td', class_='exp-substance')
-                substance = substance_cell.text.strip() if substance_cell else None
-                
-                date_cell = row.find('td', class_='exp-pubdate')
-                date = date_cell.text.strip() if date_cell else None
-                
-                experiences.append({
-                    "title": title,
-                    "url": exp_url,
-                    "author": author,
-                    "substance": substance,
-                    "rating": rating,
-                    "date": date
-                })
-
-            current_page = (start // max) + 1
-            total_pages = (total_count + max - 1) // max
-            
-            next_start = start + max if start + max < total_count else None
-            
-            pagination = {
-                "current_page": current_page,
-                "total_pages": total_pages,
-                "has_next": next_start is not None,
-                # Update next_url to point to our API endpoint
-                "next_url": f"/erowid/category/experiences?start={next_start}&max={max}" if next_start else None,
-                "experiences_per_page": max,
-                "total_experiences": total_count,
-                "current_start": start
-            }
-
-            return {
-                "status": "success",
-                "experiences": experiences,
-                "pagination": pagination
-            }
-            
-    except httpx.TimeoutException:
-        raise HTTPException(status_code=504, detail="Request timed out")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
+    result = await fetch_paginated_experiences(request.url, start, max)
+    return {
+        "status": "success",
+        **result
+    }
     
-    
-# todo: with the experience links make two more functions, one fetches random experiences and other fetches the experience and its details
-
 @router.post("/erowid/experience")
 async def fetch_experience_details(request: FetchExperienceDetailsRequest):
     """

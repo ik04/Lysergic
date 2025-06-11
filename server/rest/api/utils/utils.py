@@ -109,3 +109,119 @@ async def fetch_experience_categories(url: str) -> dict:
             status_code=500,
             detail=f"Error parsing categories: {str(e)}"
         )
+
+
+async def fetch_paginated_experiences(url: str, start: int = 0, max: int = 100) -> dict:
+    """
+    Fetch and parse paginated experiences from Erowid
+    Args:
+        url: Base URL for the experience list
+        start: Starting index for pagination
+        max: Maximum results per page
+    Returns:
+        dict containing experiences list and pagination info
+    """
+    try:
+        async with httpx.AsyncClient(verify=False, timeout=30.0) as client:
+            # First fetch the general page
+            response = await client.get(url)
+            response.raise_for_status()
+            
+            soup = BeautifulSoup(response.text, 'html.parser')
+            
+            # Find the pagination table and next button
+            pages_table = soup.find('table', class_='results-table')
+            if not pages_table:
+                raise ValueError("Could not find results table")
+                
+            # Find next button - it's in the last TD with an A tag containing an IMG
+            next_button = pages_table.find_all('td')[-1].find('a', href=True)
+            if next_button:
+                # Extract base URL and parameters from next link
+                next_url = next_button['href']
+                base_url = next_url.split('?')[0]
+                params = {p.split('=')[0]: p.split('=')[1] 
+                         for p in next_url.split('?')[1].split('&')}
+                
+                # Get category ID from params
+                category_id = params.get('S')
+            else:
+                raise ValueError("Could not find pagination links")
+
+            if not category_id:
+                raise ValueError("Invalid category URL - missing category ID") 
+
+            # Construct paginated URL with extracted base URL and params
+            paginated_url = f"https://erowid.org{base_url}?S={category_id}&C=1&ShowViews=0&Cellar=0&Start={start}&Max={max}"
+            
+            # Fetch the paginated results
+            response = await client.get(paginated_url)
+            response.raise_for_status()
+            
+            soup = BeautifulSoup(response.text, 'html.parser')
+            
+            # Get total count
+            total_text = soup.find('div', class_='exp-list-page-title-sub')
+            total_count = int(total_text.text.strip('()').split()[0]) if total_text else 0
+            
+            # Parse experiences
+            experiences = []
+            exp_rows = soup.find_all('tr', class_='exp-list-row')
+            
+            for row in exp_rows:
+                rating_img = row.find('img', alt=True)
+                rating = rating_img['alt'] if rating_img else "Unrated"
+                
+                title_cell = row.find('td', class_='exp-title')
+                if title_cell and title_cell.find('a'):
+                    title = title_cell.find('a').text
+                    exp_url = f"https://erowid.org{title_cell.find('a')['href']}"
+                else:
+                    continue
+                    
+                author_cell = row.find('td', class_='exp-author')
+                author = author_cell.text.strip() if author_cell else None
+                
+                substance_cell = row.find('td', class_='exp-substance')
+                substance = substance_cell.text.strip() if substance_cell else None
+                
+                date_cell = row.find('td', class_='exp-pubdate')
+                date = date_cell.text.strip() if date_cell else None
+                
+                experiences.append({
+                    "title": title,
+                    "url": exp_url,
+                    "author": author,
+                    "substance": substance, 
+                    "rating": rating,
+                    "date": date
+                })
+
+            # Update pagination to use the proper URL structure
+            next_start = start + max if start + max < total_count else None
+            
+            pagination = {
+                "current_page": (start // max) + 1,
+                "total_pages": (total_count + max - 1) // max,
+                "has_next": next_start is not None,
+                "next_url": f"/erowid/category/experiences?start={next_start}&max={max}" if next_start else None,
+                "experiences_per_page": max,
+                "total_experiences": total_count,
+                "current_start": start,
+                "base_url": f"{url}",
+                "category_id": category_id
+            }
+
+            return {
+                "experiences": experiences,
+                "pagination": pagination
+            }
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=504, detail="Request timed out")
+    except httpx.HTTPError as e:
+        raise HTTPException(status_code=502, detail=f"Error fetching from Erowid: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error processing experiences: {str(e)}")
