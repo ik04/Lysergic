@@ -1,6 +1,15 @@
 import httpx
 from fastapi import APIRouter, HTTPException
 from bs4 import BeautifulSoup
+import logging
+
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 async def check_experience_exists(url: str) -> tuple[bool, str]:
     """
@@ -123,93 +132,145 @@ async def fetch_experience_categories(url: str) -> dict:
 async def fetch_paginated_experiences(url: str, start: int = 0, max: int = 100) -> dict:
     """
     Fetch and parse paginated experiences from Erowid
-    Args:
-        url: Base URL for the experience list
-        start: Starting index for pagination
-        max: Maximum results per page
-    Returns:
-        dict containing experiences list and pagination info
+    Handles both paginated and non-paginated pages
     """
+    pagination_logger = logging.getLogger("erowid.pagination")
     try:
         async with httpx.AsyncClient(verify=False, timeout=30.0) as client:
+            pagination_logger.info(f"Initial request to: {url}")
             response = await client.get(url)
             response.raise_for_status()
             
             soup = BeautifulSoup(response.text, 'html.parser')
+            pagination_logger.debug("Parsing initial page")
             
-            pages_table = soup.find('table', class_='results-table')
-            if not pages_table:
-                raise ValueError("Could not find results table")
-                
-            next_button = pages_table.find_all('td')[-1].find('a', href=True)
-            if next_button:
-                next_url = next_button['href']
-                base_url = next_url.split('?')[0]
-                params = {p.split('=')[0]: p.split('=')[1] 
-                         for p in next_url.split('?')[1].split('&')}
-                
-                category_id = params.get('S')
-            else:
-                raise ValueError("Could not find pagination links")
-
-            if not category_id:
-                raise ValueError("Invalid category URL - missing category ID") 
-
-            paginated_url = f"https://erowid.org{base_url}?S={category_id}&C=1&ShowViews=0&Cellar=0&Start={start}&Max={max}"
-            
-            response = await client.get(paginated_url)
-            response.raise_for_status()
-            
-            soup = BeautifulSoup(response.text, 'html.parser')
-            
+            # Get total count from page title
             total_text = soup.find('div', class_='exp-list-page-title-sub')
-            total_count = int(total_text.text.strip('()').split()[0]) if total_text else 0
+            if not total_text:
+                pagination_logger.error("Could not find experience count div")
+                raise ValueError("Could not find experience count")
+                
+            total_count = int(total_text.text.strip('()').split()[0])
+            pagination_logger.info(f"Total experiences found: {total_count}")
+            
+            # Find results table
+            exp_table = soup.find('table', class_='exp-list-table')
+            if not exp_table:
+                pagination_logger.error("Could not find experience table")
+                raise ValueError("Could not find results table")
+            
+            # Check if page has pagination by looking for the next button image
+            next_button = soup.find('img', {'src': '/cgi-bin/search/images/buttonr.gif'})
+            has_pagination = bool(next_button)
+            if has_pagination:
+                next_link = next_button.find_parent('a')
+                has_pagination = bool(next_link)  # Update based on whether we found the parent link
+                
+            pagination_logger.info(f"Page has pagination: {has_pagination}")
             
             experiences = []
-            exp_rows = soup.find_all('tr', class_='exp-list-row')
+            exp_rows = exp_table.find_all('tr', class_='exp-list-row')
+            pagination_logger.debug(f"Found {len(exp_rows)} experience rows in initial table")
             
-            for row in exp_rows:
-                rating_img = row.find('img', alt=True)
-                rating = rating_img['alt'] if rating_img else "Unrated"
+            if has_pagination:
+                pagination_logger.info(f"Processing paginated view - Start: {start}, Max: {max}")
+                # Use the existing pagination logic
+                form = soup.find('form', {'name': 'ResultsForm'})
+                if not form:
+                    pagination_logger.error("Could not find pagination form")
+                    raise ValueError("Could not find results form")
                 
-                title_cell = row.find('td', class_='exp-title')
-                if title_cell and title_cell.find('a'):
+                action_url = form.get('action')
+                if not action_url:
+                    pagination_logger.error("Could not find form action URL")
+                    raise ValueError("Could not find form action URL")
+                    
+                # Build pagination URL
+                base_url = f"https://www.erowid.org{action_url}"
+                page_url = f"{base_url}?S={start}&C={max}"
+                pagination_logger.info(f"Fetching paginated results from: {page_url}")
+                
+                # Fetch paginated results
+                page_response = await client.get(page_url)
+                page_soup = BeautifulSoup(page_response.text, 'html.parser')
+                exp_table = page_soup.find('table', class_='exp-list-table')
+                if not exp_table:
+                    pagination_logger.error("Could not find results table in paginated page")
+                    raise ValueError("Could not find results table in paginated page")
+                    
+                exp_rows = exp_table.find_all('tr', class_='exp-list-row')
+                pagination_logger.info(f"Found {len(exp_rows)} experiences in paginated view")
+            else:
+                pagination_logger.info(f"Processing non-paginated view - Start: {start}, Max: {max}")
+                # For non-paginated pages, take the slice of experiences
+                end = min(start + max, len(exp_rows))
+                pagination_logger.debug(f"Taking slice [{start}:{end}] from {len(exp_rows)} total rows")
+                exp_rows = exp_rows[start:end]
+            
+            # Parse experience rows
+            for row in exp_rows:
+                try:
+                    rating_img = row.find('img', alt=True)
+                    rating = rating_img['alt'] if rating_img else "Unrated"
+                    
+                    title_cell = row.find('td', class_='exp-title')
+                    if not title_cell or not title_cell.find('a'):
+                        pagination_logger.warning("Skipping row - missing title cell or link")
+                        continue
+                        
                     title = title_cell.find('a').text
                     exp_url = f"https://erowid.org{title_cell.find('a')['href']}"
-                else:
-                    continue
                     
-                author_cell = row.find('td', class_='exp-author')
-                author = author_cell.text.strip() if author_cell else None
-                
-                substance_cell = row.find('td', class_='exp-substance')
-                substance = substance_cell.text.strip() if substance_cell else None
-                
-                date_cell = row.find('td', class_='exp-pubdate')
-                date = date_cell.text.strip() if date_cell else None
-                
-                experiences.append({
-                    "title": title,
-                    "url": exp_url,
-                    "author": author,
-                    "substance": substance, 
-                    "rating": rating,
-                    "date": date
-                })
+                    author_cell = row.find('td', class_='exp-author')
+                    author = author_cell.text.strip() if author_cell else None
+                    
+                    substance_cell = row.find('td', class_='exp-substance')
+                    substance = substance_cell.text.strip() if substance_cell else None
+                    
+                    date_cell = row.find('td', class_='exp-pubdate')
+                    date = date_cell.text.strip() if date_cell else None
+                    
+                    experiences.append({
+                        "title": title,
+                        "url": exp_url,
+                        "author": author,
+                        "substance": substance, 
+                        "rating": rating,
+                        "date": date
+                    })
+                except Exception as row_error:
+                    pagination_logger.error(f"Error parsing row: {str(row_error)}")
+                    continue
 
-            next_start = start + max if start + max < total_count else None
-            
-            pagination = {
-                "current_page": (start // max) + 1,
-                "total_pages": (total_count + max - 1) // max,
-                "has_next": next_start is not None,
-                "next_url": f"/erowid/category/experiences?start={next_start}&max={max}" if next_start else None,
-                "experiences_per_page": max,
-                "total_experiences": total_count,
-                "current_start": start,
-                "base_url": f"{url}",
-                "category_id": category_id
-            }
+            pagination_logger.info(f"Successfully parsed {len(experiences)} experiences")
+            # Create pagination info based on page type
+            if has_pagination:
+                total_pages = (total_count + max - 1) // max
+                current_page = (start // max) + 1
+                has_next = current_page < total_pages
+                next_url = f"{base_url}?S={start + max}&C={max}" if has_next else None
+                
+                pagination = {
+                    "current_page": current_page,
+                    "total_pages": total_pages,
+                    "has_next": has_next,
+                    "next_url": next_url,
+                    "experiences_per_page": max,
+                    "total_experiences": total_count,
+                    "current_start": start,
+                    "base_url": base_url
+                }
+            else:
+                pagination = {
+                    "current_page": 1,
+                    "total_pages": 1,
+                    "has_next": False,
+                    "next_url": None,
+                    "experiences_per_page": total_count,
+                    "total_experiences": total_count,
+                    "current_start": 0,
+                    "base_url": url
+                }
 
             return {
                 "experiences": experiences,

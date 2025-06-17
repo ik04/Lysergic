@@ -4,7 +4,14 @@ from bs4 import BeautifulSoup
 from api.models.fetch_experience_request import FetchExperienceRequest
 from api.models.fetch_experience_details_request import FetchExperienceDetailsRequest
 from api.models.fetch_category_experiences_request import FetchCategoryExperiencesRequest
-from api.utils.utils import check_experience_exists, fetch_experience_categories, fetch_paginated_experiences
+from api.models.fetch_random_experiences_request import FetchRandomExperiencesRequest
+from api.utils.utils import check_experience_exists, fetch_experience_categories, fetch_paginated_experiences, logger
+import random
+import asyncio
+from typing import List
+
+
+
 
 
 
@@ -83,7 +90,6 @@ async def fetch_experience_details(request: FetchExperienceDetailsRequest):
                         "form": form
                     })
 
-        # Extract footer metadata
         footdata = soup.find('table', class_='footdata')
         metadata = {}
         if footdata:
@@ -120,7 +126,87 @@ async def fetch_experience_details(request: FetchExperienceDetailsRequest):
             }
         }
 @router.post("/erowid/random/experiences")
-async def fetch_random_experience(request: FetchExperienceRequest, size_per_substance: int = 1):
+async def fetch_random_experiences(request: FetchRandomExperiencesRequest, size_per_substance: int = 1):
+    """
+    Fetch random experiences from multiple substances.
+    Takes 4 random substance URLs and returns random experiences from random categories.
+    """
+    logger.info(f"Starting random experiences fetch with {len(request.urls)} substances")
+    logger.info(f"Requested size per substance: {size_per_substance}")
+    
+    # Take 4 random substances
+    substance_urls = request.urls if isinstance(request.urls, list) else [request.urls]
+    if len(substance_urls) > 4:
+        substance_urls = random.sample(substance_urls, 4)
+    logger.info(f"Selected random substances: {substance_urls}")
+    
+    async def process_substance(url: str) -> List[dict]:
+        logger.info(f"Processing substance URL: {url}")
+        try:
+            # First get the experiences URL
+            has_experiences, experiences_url = await check_experience_exists(url)
+            if not has_experiences or not experiences_url:
+                logger.warning(f"No experiences found for substance: {url}")
+                return []
+                
+            # Get categories directly from experiences URL
+            categories = await fetch_experience_categories(experiences_url)
+            if not categories:
+                logger.warning(f"No categories found for substance: {url}")
+                return []
+            
+            # Select random category - categories is already the dictionary of categories
+            category_list = list(categories.values())
+            selected_category = random.choice(category_list)
+            logger.info(f"Selected category for {url}: {selected_category['name']} "
+                       f"(total experiences: {selected_category['experience_count']})")
+            # Calculate random start position
+            total_experiences = selected_category["experience_count"]
+            if total_experiences <= size_per_substance:
+                start = 0
+            else:
+                max_start = total_experiences - size_per_substance
+                start = random.randint(0, max_start)
+            
+            logger.info(f"Fetching experiences from position {start} "
+                       f"(max: {size_per_substance}) for category: {selected_category['name']}")
+            
+            # Directly use fetch_paginated_experiences with the category URL
+            print(selected_category["url"])
+            experiences = await fetch_paginated_experiences(
+                selected_category["url"],  # Use the URL directly from the category
+                start=start,
+                max=size_per_substance
+            )
+            
+            result = experiences.get("experiences", [])
+            logger.info(f"Retrieved {len(result)} experiences for {url}")
+            return result
+            
+        except Exception as e:
+            logger.error(f"Error processing substance {url}: {str(e)}", exc_info=True)
+            return []
+
+    # Process all substances concurrently
+    logger.info("Starting concurrent processing of substances")
+    tasks = [process_substance(url) for url in substance_urls]
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+    
+    # Flatten and filter results
+    experiences_feed = []
+    for idx, result in enumerate(results):
+        if isinstance(result, Exception):
+            logger.error(f"Failed to process substance {substance_urls[idx]}: {str(result)}")
+        elif isinstance(result, list):
+            experiences_feed.extend(result)
+            
+    # Shuffle final feed
+    random.shuffle(experiences_feed)
+    
+    logger.info(f"Final feed contains {len(experiences_feed)} experiences")
+    
     return {
         "success": True,
+        "total": len(experiences_feed),
+        "feed": experiences_feed
     }
