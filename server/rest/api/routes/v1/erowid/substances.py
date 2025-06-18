@@ -19,7 +19,7 @@ def parse_dropdown_options(select: BeautifulSoup, category: str) -> List[Dict]:
         if (url == '#' or 
             name.startswith('-') or 
             'other' in name.lower() or 
-            name in ['Common Psychoactives', 'Main Index', 'Big Chart', 'Chemicals', 'Chemical Index', 'Plants', 'Plants Index', 'Smart Drugs', 'Nootropics Index', 'Pharmaceuticals', 'Pharmaceuticals Index','Herbs','Herb Index']):
+            name in ['Common Psychoactives', 'Main Index', 'Big Chart', 'Chemicals', 'Chemicals Index', 'Plants', 'Plants Index', 'Smart Drugs', 'Nootropics Index', 'Pharmaceuticals', 'Pharmaceuticals Index','Herbs','Herb Index']):
             continue
             
         substances.append({
