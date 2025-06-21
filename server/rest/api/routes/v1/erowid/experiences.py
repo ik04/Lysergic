@@ -210,3 +210,61 @@ async def fetch_random_experiences(request: FetchRandomExperiencesRequest, size_
         "total": len(experiences_feed),
         "feed": experiences_feed
     }
+
+@router.get("/erowid/user/{username}")
+async def fetch_user_experiences(username: str):
+    """
+    Fetch all experiences for a given Erowid username.
+    """
+    url = f"https://www.erowid.org/experiences/exp.cgi?A=Search&AuthorSearch={username}&Exact=1"
+    logger.info(f"Fetching user experiences for username: {username} from {url}")
+
+    try:
+        async with httpx.AsyncClient(verify=False, timeout=30.0) as client:
+            response = await client.get(url)
+            response.raise_for_status()
+            soup = BeautifulSoup(response.text, 'html.parser')
+
+            exp_table = soup.find('table', class_='exp-list-table')
+            if not exp_table:
+                logger.warning(f"No experience table found for user: {username}")
+                return {"success": True, "experiences": []}
+
+            experiences = []
+            exp_rows = exp_table.find_all('tr', class_='exp-list-row')
+            for row in exp_rows:
+                try:
+                    title_cell = row.find('td', class_='exp-title')
+                    if not title_cell or not title_cell.find('a'):
+                        continue
+                    title = title_cell.find('a').text
+                    exp_url = f"https://erowid.org{title_cell.find('a')['href']}"
+
+                    author_cell = row.find('td', class_='exp-author')
+                    author = author_cell.text.strip() if author_cell else None
+
+                    substance_cell = row.find('td', class_='exp-substance')
+                    substance = substance_cell.text.strip() if substance_cell else None
+
+                    date_cell = row.find('td', class_='exp-pubdate')
+                    date = date_cell.text.strip() if date_cell else None
+
+                    experiences.append({
+                        "title": title,
+                        "url": exp_url,
+                        "author": author,
+                        "substance": substance,
+                        "date": date
+                    })
+                except Exception as e:
+                    logger.error(f"Error parsing row for user {username}: {str(e)}")
+                    continue
+
+            logger.info(f"Found {len(experiences)} experiences for user: {username}")
+            return {
+                "success": True,
+                "experiences": experiences
+            }
+    except Exception as e:
+        logger.error(f"Error fetching experiences for user {username}: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to fetch user experiences: {str(e)}")
