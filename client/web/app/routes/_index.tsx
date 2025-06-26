@@ -2,8 +2,12 @@ import type { MetaFunction } from "@remix-run/node";
 
 export const meta: MetaFunction = () => {
   return [
-    { title: "New Remix App" },
-    { name: "description", content: "Welcome to Remix!" },
+    { title: "Lysergic" },
+    {
+      name: "description",
+      content:
+        "Lysergic is a platform for exploring real-world psychedelic experiences through curated trip reports from Erowid and other sources. Whether you're researching LSD, psilocybin, DMT, or other substances, Lysergic provides a searchable, organized archive of first-hand accounts—tagged by substance, dosage, intensity, and effects. Discover story-driven journeys, harm-reduction insights, and community-rated experiences all in one minimalist, psychedelic-inspired interface.",
+    },
   ];
 };
 

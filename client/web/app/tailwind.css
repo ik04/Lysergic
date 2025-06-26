@@ -4,9 +4,25 @@
 
 html,
 body {
-  @apply bg-white dark:bg-gray-950;
+  @apply bg-white;
+}
 
-  @media (prefers-color-scheme: dark) {
-    color-scheme: dark;
-  }
+/* Psychedelic theme */
+[data-theme="psychedelic"] body {
+  @apply bg-gradient-to-br from-pink-500 via-yellow-400 to-purple-600 text-white;
+}
+
+/* Minimal theme */
+[data-theme="minimal"] body {
+  @apply bg-white text-gray-900;
+}
+
+/* Retro theme */
+[data-theme="retro"] body {
+  @apply bg-yellow-100 text-orange-900;
+}
+
+/* Classic theme */
+[data-theme="classic"] body {
+  @apply bg-gray-100 text-gray-800;
 }
