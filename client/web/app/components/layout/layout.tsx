@@ -12,7 +12,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
   const navlinks = [
     { name: "Home", href: "/dashboard", icon: Home },
     { name: "Explore", href: "/settings", icon: Compass },
-    { name: "Reading", href: "/reading", icon: BookOpen },
+    { name: "Bookmarks", href: "/bookmarks", icon: BookOpen },
     { name: "Information", href: "/information", icon: Info },
   ];
 
@@ -32,7 +32,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
   }, [open]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-[var(--color-background)] text-[var(--color-foreground)] font-mono">
+    <div className="min-h-screen flex flex-col bg-background text-baseColor font-spacegrotesk">
       <nav className="flex items-center justify-between px-4 py-3 border-b border-gray-500">
         <div className="flex items-center gap-2">
           <img src="/assets/logo.svg" className="h-7" alt="" />
@@ -76,7 +76,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
             </div>
           )}
           {/* profile */}
-          <div className="w-8 h-8 bg-gray-200 rounded-full" />
+          {/* <div className="w-8 h-8 bg-gray-200 rounded-full" /> */}
         </div>
       </nav>
 
