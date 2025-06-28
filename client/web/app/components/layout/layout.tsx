@@ -1,15 +1,19 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Palette } from "lucide-react";
+import { Link, useLocation } from "@remix-run/react";
+import { Palette, Home, Compass, BookOpen, Info } from "lucide-react";
 import { useTheme } from "~/theme/ThemeProvider";
 
 export const Layout = ({ children }: { children: React.ReactNode }) => {
   const { theme, setTheme, themes } = useTheme();
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const location = useLocation();
 
   const navlinks = [
-    { name: "Home", href: "/dashboard" },
-    { name: "Explore", href: "/settings" },
+    { name: "Home", href: "/dashboard", icon: Home },
+    { name: "Explore", href: "/settings", icon: Compass },
+    { name: "Reading", href: "/reading", icon: BookOpen },
+    { name: "Information", href: "/information", icon: Info },
   ];
 
   useEffect(() => {
@@ -79,8 +83,24 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto">{children}</main>
 
-      <nav className="flex justify-between items-center px-6 py-4 border-t border-gray-500 bg-transparent">
-        <div className=""></div>
+      {/* Bottom Nav */}
+      <nav className="flex justify-between items-center border-t border-gray-500 bg-background text-[11px]">
+        {navlinks.map(({ name, href, icon: Icon }) => {
+          const isActive = location.pathname === href;
+          return (
+            <Link
+              key={name}
+              to={href}
+              className={`flex flex-col items-center justify-center w-full py-2 transition ${
+                isActive ? "text-accent font-bold" : "text-baseColor"
+              } hover:text-accent`}
+              prefetch="intent"
+            >
+              <Icon className="w-4 h-4 mb-1" />
+              {name}
+            </Link>
+          );
+        })}
       </nav>
     </div>
   );
