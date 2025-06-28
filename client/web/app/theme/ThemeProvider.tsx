@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 
-export type Theme = "psychedelic" | "minimal" | "retro" | "classic"; // Add as many as you want
+export type Theme = string;
 
 type ThemeContextType = {
   theme: Theme;
@@ -10,7 +10,8 @@ type ThemeContextType = {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-const availableThemes: Theme[] = ["psychedelic", "minimal", "retro", "classic"];
+// Add all your themes here:
+const availableThemes: Theme[] = ["lysergic", "psychedelic"];
 
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   const [theme, setTheme] = useState<Theme>(() => {

@@ -1,28 +1,49 @@
+@import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Silkscreen:wght@400;700&family=Space+Grotesk:wght@300..700&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-html,
-body {
-  @apply bg-white;
+html[data-theme="lysergic"] {
+  --color-accent: #7c5ce0;
+  --color-accent2: #34b88a;
+  --color-error: #f97352;
+  --color-background: #0b0f10;
+  --color-baseColor: #ffffff;
+  --color-foreground: #121619;
 }
 
-/* Psychedelic theme */
-[data-theme="psychedelic"] body {
-  @apply bg-gradient-to-br from-pink-500 via-yellow-400 to-purple-600 text-white;
+html[data-theme="psychedelic"] {
+  --color-accent: #a259f7;
+  --color-accent2: #faff00;
+  --color-error: #ff4e9b;
+  --color-background: #0b0f10;
+  --color-baseColor: #ffffff;
+  --color-foreground: #121619;
 }
 
-/* Minimal theme */
-[data-theme="minimal"] body {
-  @apply bg-white text-gray-900;
+html[data-theme="minimal"] {
+  --color-accent: #222831;
+  --color-accent2: #eeeeee;
+  --color-error: #ff6f61;
+  --color-background: #0b0f10;
+  --color-baseColor: #ffffff;
+  --color-foreground: #121619;
 }
 
-/* Retro theme */
-[data-theme="retro"] body {
-  @apply bg-yellow-100 text-orange-900;
+html[data-theme="retro"] {
+  --color-accent: #ffb347;
+  --color-accent2: #77dd77;
+  --color-error: #ff6961;
+  --color-background: #0b0f10;
+  --color-baseColor: #ffffff;
+  --color-foreground: #121619;
 }
 
-/* Classic theme */
-[data-theme="classic"] body {
-  @apply bg-gray-100 text-gray-800;
+html[data-theme="classic"] {
+  --color-accent: #003366;
+  --color-accent2: #c0c0c0;
+  --color-error: #b22222;
+  --color-background: #0b0f10;
+  --color-baseColor: #ffffff;
+  --color-foreground: #121619;
 }
