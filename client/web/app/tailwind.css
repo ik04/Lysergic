@@ -8,8 +8,8 @@ html[data-theme="lysergic"] {
   --color-accent2: #34b88a;
   --color-error: #f97352;
   --color-background: #0b0f10;
+  --color-rating: #ffdc5e;
   --color-baseColor: #ffffff;
-  --color-foreground: #121619;
 }
 
 html[data-theme="psychedelic"] {
@@ -18,7 +18,7 @@ html[data-theme="psychedelic"] {
   --color-error: #ff4e9b;
   --color-background: #0b0f10;
   --color-baseColor: #ffffff;
-  --color-foreground: #121619;
+  --color-rating: #ffffff;
 }
 
 html[data-theme="minimal"] {
@@ -27,7 +27,7 @@ html[data-theme="minimal"] {
   --color-error: #ff6f61;
   --color-background: #0b0f10;
   --color-baseColor: #ffffff;
-  --color-foreground: #121619;
+  --color-rating: #ffffff;
 }
 
 html[data-theme="retro"] {
@@ -36,7 +36,7 @@ html[data-theme="retro"] {
   --color-error: #ff6961;
   --color-background: #0b0f10;
   --color-baseColor: #ffffff;
-  --color-foreground: #121619;
+  --color-rating: #ffffff;
 }
 
 html[data-theme="classic"] {
@@ -45,5 +45,13 @@ html[data-theme="classic"] {
   --color-error: #b22222;
   --color-background: #0b0f10;
   --color-baseColor: #ffffff;
-  --color-foreground: #121619;
+  --color-rating: #ffffff;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

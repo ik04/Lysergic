@@ -6,23 +6,32 @@ export const ExperienceCard = ({ exp }: { exp: Experience }) => {
       href={exp.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="block border border-baseColor rounded-md px-4 py-3 mb-3 bg-background hover:bg-accent/10 transition"
+      className="block border-b w-full border-accent border-dashed px-4 py-3 bg-background transition"
     >
-      <div className="flex justify-between text-[10px] text-muted font-sans mb-1">
-        <span>{exp.substance}</span>
-        <span>{exp.rating}</span>
-      </div>
-
-      <div className="flex justify-between items-center gap-4">
-        <h2 className="text-[14px] font-bold font-pressstart text-foreground leading-tight">
+      <div className="flex justify-between items-start mb-2 gap-4">
+        <h2 className="text-[12px] font-bold font-silkscreen text-accent2 leading-tight max-w-[70%]">
           {exp.title}
         </h2>
-        <span className="text-[10px] font-bold text-right font-silkscreen text-foreground">
+        <span className="text-[10px] font-bold text-right font-spacegrotesk capitalize text-accent2 whitespace-nowrap">
           posted by{" "}
           {exp.author.length > 10
             ? `${exp.author.slice(0, 10)}...`
             : exp.author}
         </span>
+      </div>
+
+      <div className="flex justify-between items-center gap-2">
+        <div className="max-w-[70%] truncate">
+          <span className="block truncate text-[10px] px-2 py-0.5 bg-accent/10 text-accent rounded-full font-bold font-spacegrotesk uppercase tracking-wide">
+            {exp.substance}
+          </span>
+        </div>
+
+        {exp.rating && (
+          <span className="text-[10px] px-2 py-0.5 bg-foreground/10 text-rating rounded-full font-bold font-spacegrotesk uppercase tracking-wide whitespace-nowrap">
+            {exp.rating}
+          </span>
+        )}
       </div>
     </a>
   );

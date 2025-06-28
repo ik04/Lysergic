@@ -33,7 +33,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-baseColor font-spacegrotesk">
-      <nav className="flex items-center justify-between px-4 py-3 border-b border-gray-500">
+      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center bg-background justify-between px-4 py-4 border-b border-accent">
         <div className="flex items-center gap-2">
           <img src="/assets/logo.svg" className="h-7" alt="" />
           <span className="text-base font-pressstart font-bold text-accent">
@@ -75,26 +75,22 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
               </ul>
             </div>
           )}
-          {/* profile */}
-          {/* <div className="w-8 h-8 bg-gray-200 rounded-full" /> */}
         </div>
       </nav>
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-y-auto">{children}</main>
+      <main className="flex-1 overflow-y-auto pt-16 pb-16">{children}</main>
 
-      {/* Bottom Nav */}
-      <nav className="flex justify-between items-center border-t border-gray-500 bg-background text-[11px]">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 flex justify-between items-center border-t border-accent bg-background text-[11px]">
         {navlinks.map(({ name, href, icon: Icon }) => {
           const isActive = location.pathname === href;
           return (
             <Link
               key={name}
               to={href}
-              className={`flex flex-col items-center justify-center w-full py-2 transition ${
+              prefetch="intent"
+              className={`flex flex-col items-center justify-center w-full py-4 transition ${
                 isActive ? "text-accent font-bold" : "text-baseColor"
               } hover:text-accent`}
-              prefetch="intent"
             >
               <Icon className="w-4 h-4 mb-1" />
               {name}

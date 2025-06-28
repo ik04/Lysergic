@@ -27,8 +27,6 @@ export const setCachedSubstances = (data: any) => {
 };
 
 export const collectInfoUrls = (data: any) => {
-  console.log(Object.values(data));
-
   return Object.values(data)
     .filter(Array.isArray)
     .flatMap((arr) =>

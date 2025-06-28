@@ -4,6 +4,9 @@ export default {
   content: ["./app/**/{**,.client,.server}/**/*.{js,jsx,ts,tsx}"],
   theme: {
     extend: {
+      animation: {
+        "slow-spin": "spin 3s linear infinite",
+      },
       fontFamily: {
         sans: [
           "Inter",
@@ -24,8 +27,8 @@ export default {
         accent2: "var(--color-accent2)",
         error: "var(--color-error)",
         background: "var(--color-background)",
-        foreground: "var(--color-foreground)",
         baseColor: "var(--color-baseColor)",
+        rating: "var(--color-rating)",
       },
     },
   },

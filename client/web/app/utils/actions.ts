@@ -8,18 +8,6 @@ import {
   setCachedSubstances,
 } from "./utils";
 
-export const generateFeed = async (
-  baseUrl: string,
-  size: number,
-  urls: string[]
-) => {
-  const url = `${baseUrl}/erowid/random/experiences?size_per_substance=${size}`;
-  const response = await axios.post(url, {
-    urls,
-  });
-  return response.data;
-};
-
 export const fetchSubstances = async <T = unknown[]>(
   baseUrl: string
 ): Promise<T> => {
@@ -31,15 +19,12 @@ export const fetchSubstances = async <T = unknown[]>(
 export const loadSubstances = async (baseUrl: string) => {
   const cached: any = getCachedSubstances();
   if (cached) {
-    console.log("Using cached substances:", cached);
-
     return;
   }
 
   try {
     const response: any = await fetchSubstances(baseUrl);
     setCachedSubstances(response);
-    console.log("Fetched and cached substances:", response);
   } catch (err) {
     console.error("Failed to fetch substances:", err);
   }
@@ -48,9 +33,6 @@ export const loadSubstances = async (baseUrl: string) => {
 export const loadOrGenerateInfoUrls = async (baseUrl: string) => {
   const cachedLinks = getCachedSubstanceLinks();
   if (cachedLinks) {
-    console.log("Using cached substance_links.");
-    console.log(cachedLinks);
-
     return cachedLinks;
   }
 
@@ -65,4 +47,28 @@ export const loadOrGenerateInfoUrls = async (baseUrl: string) => {
     setCachedSubstanceLinks(links);
     return links;
   }
+};
+
+export const generateFeed = async (
+  baseUrl: string,
+  size: number,
+  urls: string[]
+) => {
+  const url = `${baseUrl}/erowid/random/experiences?size_per_substance=${size}`;
+  const response = await axios.post(url, {
+    urls,
+  });
+  console.log("Generated feed response:", response.data);
+
+  return response.data;
+};
+
+export const generateFeedFromCache = async (baseUrl: string, size: number) => {
+  const urls = getCachedSubstanceLinks();
+  if (!urls) {
+    console.warn("No cached substance links found");
+    return { feed: [] };
+  }
+
+  return await generateFeed(baseUrl, size, urls);
 };
