@@ -4,12 +4,12 @@
 @tailwind utilities;
 
 html[data-theme="lysergic"] {
-  --color-accent: #7c5ce0;
-  --color-accent2: #34b88a;
-  --color-error: #f97352;
-  --color-background: #0b0f10;
-  --color-rating: #ffdc5e;
-  --color-baseColor: #ffffff;
+  --color-accent: #8c52ff;
+  --color-accent2: #00ffd0;
+  --color-error: #ff2e63;
+  --color-background: #0a0a0a;
+  --color-baseColor: #eaeaea;
+  --color-rating: #ffeaa7;
 }
 
 html[data-theme="psychedelic"] {
@@ -21,31 +21,40 @@ html[data-theme="psychedelic"] {
   --color-rating: #ffffff;
 }
 
-html[data-theme="minimal"] {
-  --color-accent: #222831;
-  --color-accent2: #eeeeee;
-  --color-error: #ff6f61;
-  --color-background: #0b0f10;
-  --color-baseColor: #ffffff;
-  --color-rating: #ffffff;
+html[data-theme="cyberdelic"] {
+  --color-accent: #00f0ff;
+  --color-accent2: #ff00f7;
+  --color-error: #ff5f45;
+  --color-background: #050011;
+  --color-baseColor: #e2e2ff;
+  --color-rating: #ffef9f;
 }
 
-html[data-theme="retro"] {
-  --color-accent: #ffb347;
-  --color-accent2: #77dd77;
-  --color-error: #ff6961;
-  --color-background: #0b0f10;
+html[data-theme="vaporwave"] {
+  --color-accent: #ff71ce;
+  --color-accent2: #01cdfe;
+  --color-error: #ff6f91;
+  --color-background: #2b2d42;
   --color-baseColor: #ffffff;
-  --color-rating: #ffffff;
+  --color-rating: #fdfd96;
 }
 
-html[data-theme="classic"] {
-  --color-accent: #003366;
-  --color-accent2: #c0c0c0;
-  --color-error: #b22222;
-  --color-background: #0b0f10;
-  --color-baseColor: #ffffff;
-  --color-rating: #ffffff;
+html[data-theme="mindwarp"] {
+  --color-accent: #ff3cac;
+  --color-accent2: #784ba0;
+  --color-error: #ff4b5c;
+  --color-background: #1a0033;
+  --color-baseColor: #f8f0fc;
+  --color-rating: #ffd700;
+}
+
+html[data-theme="alchemy"] {
+  --color-accent: #d4af37;
+  --color-accent2: #5ef38c;
+  --color-error: #ff595e;
+  --color-background: #0f0f0f;
+  --color-baseColor: #f5f5dc;
+  --color-rating: #f1c40f;
 }
 
 .scrollbar-hide::-webkit-scrollbar {
