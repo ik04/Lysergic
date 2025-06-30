@@ -11,20 +11,20 @@ export default function BookmarksPage() {
     setBookmarks(stored);
   }, []);
 
-  if (bookmarks.length === 0) {
-    return (
-      <div className="p-6 text-center text-muted text-sm">
-        No bookmarks found.
-      </div>
-    );
-  }
-
   return (
     <Layout>
       <>
-        {bookmarks.map((exp, idx) => (
-          <ExperienceCard exp={exp} />
-        ))}
+        {bookmarks.length === 0 ? (
+          <div className="p-6 text-center text-muted text-sm text-accent font-spacegrotesk">
+            No bookmarks found.
+          </div>
+        ) : (
+          <>
+            {bookmarks.map((exp, idx) => (
+              <ExperienceCard exp={exp} />
+            ))}
+          </>
+        )}
       </>
     </Layout>
   );
