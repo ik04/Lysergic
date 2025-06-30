@@ -17,30 +17,23 @@ type FeedCtx = {
 const FeedContext = createContext<FeedCtx | undefined>(undefined);
 
 export const FeedProvider = ({ children }: { children: React.ReactNode }) => {
-  const [feed, setFeed] = useState<Experience[]>([]);
+  const [feed, setFeed] = useState<any>([]);
   const [loading, setLoading] = useState(false);
   const [hasFetched, setHasFetched] = useState(false);
 
   const refreshFeed = async (baseUrl: string) => {
-    console.log("entered function refresh feed");
     if (hasFetched) return;
-    console.log("uh oh, refreshing feed");
-
     setLoading(true);
+
     await loadSubstances(baseUrl);
     await loadOrGenerateInfoUrls(baseUrl);
 
-    let allFeed: Experience[] = [];
-    let tries = 0;
-    while (allFeed.length < 12 && tries < 5) {
-      const { feed: fresh } = await generateFeedFromCache(baseUrl, 5);
-      allFeed = [...allFeed, ...fresh];
-      tries++;
-    }
+    const { feed: fresh } = await generateFeedFromCache(baseUrl, 20);
 
     const uniqueFeed = Array.from(
-      new Map(allFeed.map((f) => [f.url, f])).values()
+      new Map(fresh.map((f: any) => [f.url, f])).values()
     );
+
     setFeed(uniqueFeed);
     setHasFetched(true);
     setLoading(false);
@@ -51,7 +44,7 @@ export const FeedProvider = ({ children }: { children: React.ReactNode }) => {
     if (loading) return;
     setLoading(true);
     const { feed: extra } = await generateFeedFromCache(baseUrl, 5);
-    setFeed((prev) => [...prev, ...extra]);
+    setFeed((prev: any) => [...prev, ...extra]);
     setLoading(false);
   };
 

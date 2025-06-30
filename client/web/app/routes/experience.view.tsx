@@ -31,7 +31,7 @@ export default function ExperienceViewPage() {
 
   return (
     <Layout>
-      <div className="p-4 max-w-2xl mx-auto text-baseColor h-full">
+      <div className="p-4 max-w-2xl md:max-w-full mx-auto text-baseColor h-full">
         <button
           onClick={() =>
             history.length > 1 ? navigate(-1) : navigate("/dashboard")
@@ -46,12 +46,14 @@ export default function ExperienceViewPage() {
           <Loader />
         ) : (
           <>
-            <h1 className="text-xl font-bold text-accent mb-1">{exp.title}</h1>
-            <p className="text-sm text-muted mb-2">
+            <h1 className="text-xl font-silkscreen md:text-3xl text-accent2 mb-1">
+              {exp.title}
+            </h1>
+            <p className="text-sm text-muted mb-2 text-accent md:text-lg pl-1">
               by {exp.author} • {exp.substances} • {exp.metadata.published}
             </p>
 
-            <div className="text-xs text-muted mb-4 flex flex-wrap gap-x-4 gap-y-1">
+            <div className="text-xs text-muted mb-4 flex flex-wrap gap-x-4 gap-y-1 pl-1 md:text-lg font-spacegrotesk text-accent2">
               <p>
                 <strong>Gender:</strong> {exp.metadata.gender}
               </p>
@@ -65,24 +67,27 @@ export default function ExperienceViewPage() {
 
             {/* doses */}
             {exp.doses?.length > 0 && (
-              <div className="text-xs text-muted mb-6 space-y-1">
+              <div className="text-xs text-muted mb-6 space-y-1 pl-1">
                 <h2 className="text-sm font-bold text-accent">Doses</h2>
                 {exp.doses.map((d: any, i: number) => {
                   const info = [
                     d.substance,
-                    d.form && `(${d.form})`,
+                    d.form && `${d.form}`,
                     d.method && `via ${d.method}`,
                     d.amount && `– ${d.amount}`,
                   ]
                     .filter(Boolean)
                     .join(" ");
-                  return <p key={i}>• {info}</p>;
+                  return (
+                    <p className="text-accent text-xs md:text-base" key={i}>
+                      • {info}
+                    </p>
+                  );
                 })}
               </div>
             )}
 
-            {/* story */}
-            <article className="prose prose-invert whitespace-pre-wrap max-w-none font-spacegrotesk text-[15px] leading-relaxed">
+            <article className="prose prose-invert whitespace-pre-wrap max-w-none font-spacegrotesk text-[15px] md:leading-relaxed text-sm md:text-lg text-baseColor">
               {exp.content}
             </article>
           </>
