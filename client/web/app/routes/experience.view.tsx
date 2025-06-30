@@ -85,7 +85,15 @@ function ExperienceContent({ experience }: { experience: any }) {
       }
     } else {
       console.log("Saving bookmark:", experience);
-      const success = saveBookmark(experience);
+      const reducedExperience = {
+        title: experience.title,
+        url: experience.url,
+        author: experience.author,
+        substance: experience.substances,
+        date: experience.date,
+      };
+
+      const success = saveBookmark(reducedExperience);
       if (success) {
         setIsBookmarked(true);
         console.log("Bookmark saved successfully");

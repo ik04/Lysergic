@@ -3,8 +3,8 @@ export interface Experience {
   url: string;
   author: string;
   substance: string;
-  rating: string;
-  date: string;
+  rating?: string;
+  date?: string;
 }
 
 export interface DashboardLoaderData {
