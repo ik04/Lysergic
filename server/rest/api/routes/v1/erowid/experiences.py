@@ -11,11 +11,6 @@ import asyncio
 from typing import List
 import re
 
-
-
-
-
-
 router = APIRouter()
 
 @router.post("/erowid/experiences/categories")
