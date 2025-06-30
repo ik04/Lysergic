@@ -8,10 +8,10 @@ export const ExperienceCard = ({ exp }: { exp: any }) => {
       className="block border-b w-full border-accent border-dashed px-4 py-3 bg-background transition"
     >
       <div className="flex justify-between items-start mb-2 gap-4">
-        <h2 className="text-[13px] md:text-lg font-bold font-spacegrotesk text-accent2 leading-tight max-w-[70%]">
+        <h2 className="text-[13px] font-bold font-spacegrotesk text-accent2 leading-tight max-w-[70%]">
           {exp.title}
         </h2>
-        <span className="text-[10px] md:text-xs font-bold text-right font-spacegrotesk capitalize text-accent2 whitespace-nowrap">
+        <span className="text-[10px] font-bold text-right font-spacegrotesk capitalize text-accent2 whitespace-nowrap">
           posted by{" "}
           {exp.author.length > 10
             ? `${exp.author.slice(0, 10)}...`
