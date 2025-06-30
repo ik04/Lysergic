@@ -1,6 +1,6 @@
 import httpx
 from fastapi import APIRouter, HTTPException
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, NavigableString, Tag
 from api.models.fetch_experience_request import FetchExperienceRequest
 from api.models.fetch_experience_details_request import FetchExperienceDetailsRequest
 from api.models.fetch_category_experiences_request import FetchCategoryExperiencesRequest
@@ -9,6 +9,7 @@ from api.utils.utils import check_experience_exists, fetch_experience_categories
 import random
 import asyncio
 from typing import List
+import re
 
 
 
@@ -59,60 +60,77 @@ async def fetch_category_experiences(request: FetchCategoryExperiencesRequest, s
 @router.post("/erowid/experience")
 async def fetch_experience_details(request: FetchExperienceDetailsRequest):
     """
-    Fetch details of a specific experience from Erowid.
-    Returns the experience title, content, author, date, substances and other metadata.
+    Fetch details of a specific Erowid experience.
+    Normalises content by converting <br>, <p>, and other tags to clean new‑line text.
     """
     async with httpx.AsyncClient(verify=False, timeout=30.0) as client:
         response = await client.get(request.url)
         if response.status_code != 200:
             raise HTTPException(status_code=404, detail="Experience not found")
-        
-        soup = BeautifulSoup(response.text, 'html.parser')
-        
-        title = soup.find('div', class_='title').text.strip() if soup.find('div', class_='title') else None
-        author = soup.find('div', class_='author').find('a').text.strip() if soup.find('div', class_='author') else None
-        substances = soup.find('div', class_='substance').text.strip() if soup.find('div', class_='substance') else None
+
+        soup = BeautifulSoup(response.text, "html.parser")
+
+        title = (soup.find("div", class_="title") or Tag()).get_text(strip=True) or None
+        author = (
+            soup.find("div", class_="author").find("a").get_text(strip=True)
+            if soup.find("div", class_="author") and soup.find("div", class_="author").find("a")
+            else None
+        )
+        substances = (
+            soup.find("div", class_="substance").get_text(strip=True)
+            if soup.find("div", class_="substance")
+            else None
+        )
 
         doses = []
-        dosechart = soup.find('table', class_='dosechart')
+        dosechart = soup.find("table", class_="dosechart")
         if dosechart:
-            for row in dosechart.find_all('tr'):
-                amount = row.find('td', class_='dosechart-amount').text.strip() if row.find('td', class_='dosechart-amount') else None
-                method = row.find('td', class_='dosechart-method').text.strip() if row.find('td', class_='dosechart-method') else None
-                substance = row.find('td', class_='dosechart-substance').text.strip() if row.find('td', class_='dosechart-substance') else None
-                form = row.find('td', class_='dosechart-form').text.strip() if row.find('td', class_='dosechart-form') else None
-                
-                if any([amount, method, substance, form]):
-                    doses.append({
-                        "amount": amount,
-                        "method": method,
-                        "substance": substance,
-                        "form": form
-                    })
+            for row in dosechart.find_all("tr"):
+                amount_cell = row.find("td", class_="dosechart-amount")
+                method_cell = row.find("td", class_="dosechart-method")
+                substance_cell = row.find("td", class_="dosechart-substance")
+                form_cell = row.find("td", class_="dosechart-form")
 
-        footdata = soup.find('table', class_='footdata')
+                dose = {
+                    "amount": amount_cell.get_text(strip=True) if amount_cell else None,
+                    "method": method_cell.get_text(strip=True) if method_cell else None,
+                    "substance": substance_cell.get_text(strip=True) if substance_cell else None,
+                    "form": form_cell.get_text(strip=True) if form_cell else None,
+                }
+
+                if any(dose.values()):
+                    doses.append(dose)
         metadata = {}
+        footdata = soup.find("table", class_="footdata")
         if footdata:
-            for row in footdata.find_all('tr'):
-                for cell in row.find_all('td'):
-                    if 'Gender' in cell.text:
-                        metadata['gender'] = cell.text.replace('Gender:', '').strip()
-                    elif 'Age' in cell.text:
-                        metadata['age'] = cell.text.replace('Age at time of experience:', '').strip()
-                    elif 'Published' in cell.text:
-                        metadata['published'] = cell.text.replace('Published:', '').strip()
-                    elif 'Views' in cell.text:
-                        metadata['views'] = cell.text.replace('Views:', '').strip()
-                    elif 'ExpID' in cell.text:
-                        metadata['exp_id'] = cell.text.replace('ExpID:', '').strip()
-                    elif 'topic-list' in cell.get('class', []):
-                        metadata['topics'] = cell.text.strip()
+            for cell in footdata.find_all("td"):
+                txt = cell.get_text(strip=True)
+                if txt.startswith("Gender:"):
+                    metadata["gender"] = txt.replace("Gender:", "").strip()
+                elif txt.startswith("Age"):
+                    metadata["age"] = txt.replace("Age at time of experience:", "").strip()
+                elif txt.startswith("Published:"):
+                    metadata["published"] = txt.replace("Published:", "").strip()
+                elif txt.startswith("Views:"):
+                    metadata["views"] = txt.replace("Views:", "").strip()
+                elif txt.startswith("ExpID:"):
+                    metadata["exp_id"] = txt.replace("ExpID:", "").strip()
+                elif "topic-list" in cell.get("class", []):
+                    metadata["topics"] = txt
 
-        content = soup.find('div', class_='report-text-surround')
-        if content:
-            for element in content.find_all(['table', 'br']):
-                element.decompose()
-            content = content.get_text(strip=True)
+        content_div = soup.find("div", class_="report-text-surround")
+        cleaned_text = None
+
+        if content_div:
+            for tbl in content_div.find_all("table"):
+                tbl.decompose()
+
+            for br in content_div.find_all("br"):
+                br.replace_with("\n")
+
+            raw_text = content_div.get_text(separator="\n", strip=True)
+
+            cleaned_text = re.sub(r"\n{2,}", "\n\n", raw_text)
 
         return {
             "status": "success",
@@ -121,9 +139,9 @@ async def fetch_experience_details(request: FetchExperienceDetailsRequest):
                 "author": author,
                 "substances": substances,
                 "doses": doses,
-                "content": content,
-                "metadata": metadata
-            }
+                "content": cleaned_text,
+                "metadata": metadata,
+            },
         }
 @router.post("/erowid/random/experiences")
 async def fetch_random_experiences(request: FetchRandomExperiencesRequest, size_per_substance: int = 1):

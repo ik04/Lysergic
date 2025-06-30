@@ -31,7 +31,7 @@ export default function ExperienceViewPage() {
 
   return (
     <Layout>
-      <div className="p-4 max-w-2xl md:max-w-full mx-auto text-baseColor h-full">
+      <div className="p-4 max-w-2xl md:max-w-7xl mx-auto text-baseColor h-full">
         <button
           onClick={() =>
             history.length > 1 ? navigate(-1) : navigate("/dashboard")
@@ -46,10 +46,10 @@ export default function ExperienceViewPage() {
           <Loader />
         ) : (
           <>
-            <h1 className="text-xl font-silkscreen md:text-3xl text-accent2 mb-1">
+            <h1 className="text-xl font-silkscreen md:text-3xl text-accent mb-1">
               {exp.title}
             </h1>
-            <p className="text-sm text-muted mb-2 text-accent md:text-lg pl-1">
+            <p className="text-sm text-muted mb-4 text-accent md:text-lg pl-1">
               by {exp.author} • {exp.substances} • {exp.metadata.published}
             </p>
 
@@ -87,9 +87,12 @@ export default function ExperienceViewPage() {
               </div>
             )}
 
-            <article className="prose prose-invert whitespace-pre-wrap max-w-none font-spacegrotesk text-[15px] md:leading-relaxed text-sm md:text-lg text-baseColor">
-              {exp.content}
-            </article>
+            <article
+              className="prose prose-invert whitespace-pre-wrap max-w-none font-spacegrotesk md:leading-relaxed text-sm md:text-lg text-baseColor"
+              dangerouslySetInnerHTML={{
+                __html: exp.content.replace(/\n/g, "<br/><br/>"),
+              }}
+            />
           </>
         )}
       </div>
