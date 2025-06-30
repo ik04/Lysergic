@@ -130,6 +130,7 @@ async def fetch_experience_details(request: FetchExperienceDetailsRequest):
         return {
             "status": "success",
             "data": {
+                "url": request.url,
                 "title": title,
                 "author": author,
                 "substances": substances,

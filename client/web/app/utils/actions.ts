@@ -81,3 +81,43 @@ export const fetchExperience = async (baseUrl: string, url: string) => {
   );
   return response.data;
 };
+
+const BOOKMARK_KEY = "bookmarkedExperiences";
+
+export const getBookmarks = (): any[] =>
+  JSON.parse(localStorage.getItem(BOOKMARK_KEY) ?? "[]");
+
+export const saveBookmark = (exp: any): boolean => {
+  const list = getBookmarks();
+  console.log("Current bookmarks list:", list);
+  console.log("Trying to save experience with URL:", exp.url);
+
+  const exists =
+    Array.isArray(list) &&
+    list.some(
+      (bookmark) =>
+        bookmark && bookmark.url && exp && exp.url && bookmark.url === exp.url
+    );
+
+  console.log("Bookmark already exists:", exists);
+
+  if (!exists) {
+    const newList = [exp, ...list];
+    localStorage.setItem(BOOKMARK_KEY, JSON.stringify(newList));
+    console.log("Bookmark saved successfully. New list:", newList);
+    return true; // Successfully saved
+  }
+
+  console.log("Bookmark already exists, not saving");
+  return false; // Already exists, not saved
+};
+
+export const removeBookmark = (url: string): boolean => {
+  const list = getBookmarks();
+  const newList = list.filter((e) => e.url !== url);
+  if (newList.length !== list.length) {
+    localStorage.setItem(BOOKMARK_KEY, JSON.stringify(newList));
+    return true; // Successfully removed
+  }
+  return false; // Not found, nothing removed
+};
