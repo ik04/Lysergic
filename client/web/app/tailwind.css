@@ -4,23 +4,23 @@
 @tailwind utilities;
 
 html[data-theme="lysergic"] {
-  --color-accent: #7b4bde;
-  --color-accent2: #00e4c2;
-  --color-error: #e6455f;
-  --color-background: #111014;
-  --color-baseColor: #e0e0e0;
-  --color-rating: #f7df91;
-  background-color: #111014;
-}
-
-html[data-theme="psychedelic"] {
   --color-accent: #9257e7;
   --color-accent2: #e4f64f;
   --color-error: #e44d8a;
   --color-background: #121418;
   --color-baseColor: #efefef;
-  --color-rating: #ffffff;
+  --color-rating: #f9e27d;
   background-color: #121418;
+}
+
+html[data-theme="psychedelic"] {
+  --color-accent: #c947e7;
+  --color-accent2: #adff2f;
+  --color-error: #ff4fa8;
+  --color-background: #0f0b1e;
+  --color-baseColor: #fdfdfd;
+  --color-rating: #ffe97f;
+  background-color: #0f0b1e;
 }
 
 html[data-theme="cyberdelic"] {
@@ -41,16 +41,6 @@ html[data-theme="vaporwave"] {
   --color-baseColor: #f1f1f1;
   --color-rating: #fcfcaa;
   background-color: #323448;
-}
-
-html[data-theme="mindwarp"] {
-  --color-accent: #f94eab;
-  --color-accent2: #6f3da2;
-  --color-error: #ff5c6e;
-  --color-background: #1f003d;
-  --color-baseColor: #e7e1ee;
-  --color-rating: #ffd700;
-  background-color: #1f003d;
 }
 
 html[data-theme="alchemy"] {

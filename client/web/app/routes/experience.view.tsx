@@ -79,7 +79,7 @@ export default function ExperienceViewPage() {
                     .filter(Boolean)
                     .join(" ");
                   return (
-                    <p className="text-accent text-xs md:text-base" key={i}>
+                    <p className="text-accent2 text-xs md:text-base" key={i}>
                       • {info}
                     </p>
                   );
@@ -88,7 +88,7 @@ export default function ExperienceViewPage() {
             )}
 
             <article
-              className="prose prose-invert whitespace-pre-wrap max-w-none font-spacegrotesk md:leading-relaxed text-sm md:text-lg text-baseColor"
+              className="prose prose-invert whitespace-pre-wrap max-w-none font-spacegrotesk md:leading-relaxed text-sm md:text-lg text-baseColor pb-10"
               dangerouslySetInnerHTML={{
                 __html: exp.content.replace(/\n/g, "<br/><br/>"),
               }}

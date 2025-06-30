@@ -16,7 +16,6 @@ const availableThemes: Theme[] = [
   "psychedelic",
   "cyberdelic",
   "vaporwave",
-  "mindwarp",
   "alchemy",
 ];
 
