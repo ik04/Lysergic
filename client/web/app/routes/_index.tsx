@@ -8,6 +8,7 @@ import { FeedList } from "~/components/dashboard/feedList";
 
 const Dashboard = () => {
   const { baseUrl } = useLoaderData<DashboardLoaderData>();
+  console.log("Dashboard baseUrl:", baseUrl);
 
   return (
     <Layout>
