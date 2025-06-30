@@ -1,11 +1,10 @@
 import { Experience } from "~/types/dashboard";
+import { Link } from "@remix-run/react";
 
 export const ExperienceCard = ({ exp }: { exp: Experience }) => {
   return (
-    <a
-      href={exp.url}
-      target="_blank"
-      rel="noopener noreferrer"
+    <Link
+      to={`/experience/view?url=${encodeURIComponent(exp.url)}`}
       className="block border-b w-full border-accent border-dashed px-4 py-3 bg-background transition"
     >
       <div className="flex justify-between items-start mb-2 gap-4">
@@ -33,6 +32,6 @@ export const ExperienceCard = ({ exp }: { exp: Experience }) => {
           </span>
         )}
       </div>
-    </a>
+    </Link>
   );
 };

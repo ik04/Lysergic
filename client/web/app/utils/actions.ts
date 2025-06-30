@@ -72,3 +72,12 @@ export const generateFeedFromCache = async (baseUrl: string, size: number) => {
 
   return await generateFeed(baseUrl, size, urls);
 };
+
+export const fetchExperience = async (baseUrl: string, url: string) => {
+  const response = await axios.post(
+    `${baseUrl}/erowid/experience`,
+    { url },
+    { headers: { "Content-Type": "application/json" } }
+  );
+  return response.data;
+};

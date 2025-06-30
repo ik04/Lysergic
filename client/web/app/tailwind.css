@@ -10,6 +10,7 @@ html[data-theme="lysergic"] {
   --color-background: #0a0a0a;
   --color-baseColor: #eaeaea;
   --color-rating: #ffeaa7;
+  background-color: #0a0a0a;
 }
 
 html[data-theme="psychedelic"] {
@@ -19,6 +20,7 @@ html[data-theme="psychedelic"] {
   --color-background: #0b0f10;
   --color-baseColor: #ffffff;
   --color-rating: #ffffff;
+  background-color: #0b0f10;
 }
 
 html[data-theme="cyberdelic"] {
@@ -28,6 +30,7 @@ html[data-theme="cyberdelic"] {
   --color-background: #050011;
   --color-baseColor: #e2e2ff;
   --color-rating: #ffef9f;
+  background-color: #050011;
 }
 
 html[data-theme="vaporwave"] {
@@ -37,6 +40,7 @@ html[data-theme="vaporwave"] {
   --color-background: #2b2d42;
   --color-baseColor: #ffffff;
   --color-rating: #fdfd96;
+  background-color: #2b2d42;
 }
 
 html[data-theme="mindwarp"] {
@@ -46,6 +50,7 @@ html[data-theme="mindwarp"] {
   --color-background: #1a0033;
   --color-baseColor: #f8f0fc;
   --color-rating: #ffd700;
+  background-color: #1a0033;
 }
 
 html[data-theme="alchemy"] {
@@ -55,6 +60,7 @@ html[data-theme="alchemy"] {
   --color-background: #0f0f0f;
   --color-baseColor: #f5f5dc;
   --color-rating: #f1c40f;
+  background-color: #0f0f0f;
 }
 
 .scrollbar-hide::-webkit-scrollbar {
