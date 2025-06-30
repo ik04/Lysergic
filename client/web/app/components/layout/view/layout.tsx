@@ -29,7 +29,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
   /*  close / back handler  */
   const handleClose = () => {
     if (history.length > 1) navigate(-1);
-    else navigate("/dashboard");
+    else navigate("/");
   };
 
   /*  close theme dropdown on outside click  */
