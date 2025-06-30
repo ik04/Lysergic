@@ -10,8 +10,8 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
 
   const navlinks = [
-    { name: "Home", href: "/dashboard", icon: Home },
-    { name: "Explore", href: "/settings", icon: Compass },
+    { name: "Home", href: "/", icon: Home },
+    { name: "Explore", href: "/explore", icon: Compass },
     { name: "Bookmarks", href: "/bookmarks", icon: BookOpen },
     { name: "Information", href: "/information", icon: Info },
   ];
