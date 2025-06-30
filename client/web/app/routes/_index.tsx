@@ -5,6 +5,7 @@ import { DashboardLoaderData } from "~/types/dashboard";
 import { ExperienceCard } from "~/components/dashboard/experienceCard";
 import { useFeed } from "~/context/feedContext";
 import { FeedList } from "~/components/dashboard/feedList";
+import { MetaFunction } from "@remix-run/node";
 
 const Dashboard = () => {
   const { baseUrl } = useLoaderData<DashboardLoaderData>();
@@ -22,4 +23,15 @@ export default Dashboard;
 export const loader = async () => {
   const baseUrl = process.env.SERVER_URL ?? "";
   return { baseUrl };
+};
+
+export const meta: MetaFunction = () => {
+  return [
+    { charSet: "utf-8" },
+    { title: "Dashboard | Lysergic" },
+    {
+      name: "description",
+      content: "Your personalized dashboard showing curated experiences.",
+    },
+  ];
 };

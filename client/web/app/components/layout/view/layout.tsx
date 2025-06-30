@@ -32,7 +32,6 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
     else navigate("/");
   };
 
-  /*  close theme dropdown on outside click  */
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       if (

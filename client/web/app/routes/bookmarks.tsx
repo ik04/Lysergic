@@ -1,3 +1,4 @@
+import { MetaFunction } from "@remix-run/node";
 import { useEffect, useState } from "react";
 import { ExperienceCard } from "~/components/dashboard/experienceCard";
 import { Layout } from "~/components/layout/layout";
@@ -29,3 +30,14 @@ export default function BookmarksPage() {
     </Layout>
   );
 }
+
+export const meta: MetaFunction = () => {
+  return [
+    { charSet: "utf-8" },
+    { title: "Bookmarks | Lysergic" },
+    {
+      name: "description",
+      content: "Your saved experiences and bookmarks are listed here.",
+    },
+  ];
+};

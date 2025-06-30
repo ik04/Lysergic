@@ -1,4 +1,4 @@
-import { defer, LoaderFunctionArgs } from "@remix-run/node";
+import { defer, LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { Await, useLoaderData, useNavigate } from "@remix-run/react";
 import {
   fetchExperience,
@@ -168,3 +168,16 @@ function ExperienceContent({ experience }: { experience: any }) {
     </>
   );
 }
+
+export const meta: MetaFunction<typeof loader> = ({ data }) => {
+  return [
+    { charSet: "utf-8" },
+    {
+      title: "Experience | Lysergic",
+    },
+    {
+      name: "description",
+      content: "Read a detailed psychedelic experience report.",
+    },
+  ];
+};
