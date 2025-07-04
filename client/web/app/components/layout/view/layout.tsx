@@ -18,7 +18,6 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  /*  nav config  */
   const navlinks = [
     { name: "Home", href: "/", icon: Home },
     { name: "Explore", href: "/explore", icon: Compass },
@@ -26,7 +25,6 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
     { name: "Information", href: "/information", icon: Info },
   ];
 
-  /*  close / back handler  */
   const handleClose = () => {
     if (history.length > 1) navigate(-1);
     else navigate("/");
