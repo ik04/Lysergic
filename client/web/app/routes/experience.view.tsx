@@ -1,4 +1,3 @@
-import { LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, useNavigate, useSearchParams } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import {
@@ -85,7 +84,7 @@ export default function ExperienceViewPage() {
               {experience.title}
             </h1>
             <p className="text-sm text-muted mb-4 text-accent md:text-lg pl-1">
-              by {experience.author} • {experience.substances} •{" "}
+              by {experience.author} • {experience.substance} •{" "}
               {experience.metadata.published}
             </p>
 

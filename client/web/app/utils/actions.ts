@@ -105,7 +105,7 @@ export const saveBookmark = (exp: any): boolean => {
     const newList = [exp, ...list];
     localStorage.setItem(BOOKMARK_KEY, JSON.stringify(newList));
     console.log("Bookmark saved successfully. New list:", newList);
-    return true; // Successfully saved
+    return true;
   }
 
   console.log("Bookmark already exists, not saving");
@@ -117,7 +117,26 @@ export const removeBookmark = (url: string): boolean => {
   const newList = list.filter((e) => e.url !== url);
   if (newList.length !== list.length) {
     localStorage.setItem(BOOKMARK_KEY, JSON.stringify(newList));
-    return true; // Successfully removed
+    return true;
   }
-  return false; // Not found, nothing removed
+  return false;
 };
+
+export async function fetchRandomStory(
+  baseUrl: string,
+  substanceUrls: string[],
+  size = 1
+) {
+  const res = await fetch(
+    `${baseUrl}/erowid/random/experience?size_per_substance=${size}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ urls: substanceUrls }),
+    }
+  );
+  return res.json() as Promise<{
+    success: boolean;
+    experience: any | null;
+  }>;
+}
