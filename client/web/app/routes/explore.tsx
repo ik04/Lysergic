@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import Fuse from "fuse.js";
 import { useLoaderData } from "@remix-run/react";
 import { Layout } from "~/components/layout/layout";
-import { loadSubstances } from "~/utils/actions";
-import { getCachedSubstances } from "~/utils/utils";
+import { fetchRandomStory, loadSubstances } from "~/utils/actions";
+import { getCachedSubstances, randrange } from "~/utils/utils";
 
 import {
   FlaskConical,
@@ -15,6 +15,8 @@ import {
   X,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { Loader } from "~/components/loader";
+import { StoryOfTheDay } from "~/components/explore/storyOfTheDay";
 
 const ICONS: Record<string, LucideIcon> = {
   chemicals: FlaskConical,
@@ -35,7 +37,7 @@ const TileIcon = ({ category }: { category: string }) => {
 export const loader = () => {
   return { baseUrl: process.env.SERVER_URL ?? "" };
 };
-//  todo: add better hover to the substance buttons, add story of the dayq223
+
 export default function ExplorePage() {
   const { baseUrl } = useLoaderData<typeof loader>();
   const [substances, setSubstances] = useState<any>({});
@@ -43,6 +45,7 @@ export default function ExplorePage() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<any[]>([]);
   const [showAll, setShowAll] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const cached: any = getCachedSubstances();
@@ -80,15 +83,18 @@ export default function ExplorePage() {
 
   const visibleItems = showAll ? filteredItems : filteredItems.slice(0, 20);
 
+  const storyGif = `/assets/trippy/pattern${randrange(1, 4)}.gif`;
+
   return (
     <Layout>
       <div className="p-4 md:p-10 max-w-7xl mx-auto space-y-8 text-baseColor">
-        <h1 className="italic text-accent text-lg font-silkscreen">
+        <h1 className="italic text-accent text-lg md:text-xl font-silkscreen">
           “Not all those who wander are lost.”
           <br />
           <p className="font-spacegrotesk text-accent2">— J.R.R. Tolkien</p>
         </h1>
 
+        <StoryOfTheDay baseUrl={baseUrl} />
         <div className="flex flex-wrap gap-2">
           {categories.map((cat) => {
             const Icon = iconFor(cat);

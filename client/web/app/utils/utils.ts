@@ -59,3 +59,7 @@ export const setCachedSubstanceLinks = (links: string[]) => {
     (Date.now() + SIX_MONTHS_MS).toString()
   );
 };
+
+export const randrange = (min: number, max: number) => {
+  return Math.floor(Math.random() * (max - min)) + min;
+};

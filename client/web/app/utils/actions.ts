@@ -122,11 +122,10 @@ export const removeBookmark = (url: string): boolean => {
   return false;
 };
 
-export async function fetchRandomStory(
-  baseUrl: string,
-  substanceUrls: string[],
-  size = 1
-) {
+export const fetchRandomStory = async (baseUrl: string, size = 1) => {
+  const substanceUrls = await loadOrGenerateInfoUrls(baseUrl);
+  console.log(substanceUrls);
+
   const res = await fetch(
     `${baseUrl}/erowid/random/experience?size_per_substance=${size}`,
     {
@@ -139,4 +138,4 @@ export async function fetchRandomStory(
     success: boolean;
     experience: any | null;
   }>;
-}
+};
