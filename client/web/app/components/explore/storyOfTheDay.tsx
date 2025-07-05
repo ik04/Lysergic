@@ -37,7 +37,7 @@ export function StoryOfTheDay({ baseUrl }: { baseUrl: string }) {
         to={`/experience/view?url=${encodeURIComponent(story?.url)}`}
         className="relative flex flex-col md:flex-row md:items-center gap-4 rounded-2xl border border-dashed border-accent bg-background overflow-hidden"
       >
-        <div className="flex-1 h-40 md:h-[20rem]">
+        <div className="md:flex-1 h-40 md:h-[20rem]">
           <img
             src={storyGif}
             alt=""
