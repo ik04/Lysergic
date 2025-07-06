@@ -136,7 +136,7 @@ export default function ExperienceViewPage() {
               {isBookmarked ? "Bookmarked" : "Bookmark"}
             </button>
 
-            <article className="prose prose-invert whitespace-pre-wrap max-w-none font-spacegrotesk md:leading-relaxed text-sm md:text-lg text-baseColor pb-10">
+            <article className="prose prose-invert whitespace-pre-wrap max-w-none font-spacegrotesk md:leading-relaxed text-base md:text-lg text-baseColor pb-10">
               {experience.content}
             </article>
           </>
