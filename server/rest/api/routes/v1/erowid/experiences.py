@@ -62,7 +62,7 @@ async def fetch_experience_details(request: FetchExperienceDetailsRequest):
     """
     async with httpx.AsyncClient(verify=False, timeout=30.0) as client:
         response = await client.get(request.url)
-        response.encoding = 'utf-8'
+        response.encoding = 'cp1252'
         if response.status_code != 200:
             raise HTTPException(status_code=404, detail="Experience not found")
 
@@ -143,7 +143,6 @@ async def fetch_experience_details(request: FetchExperienceDetailsRequest):
                         "metadata": metadata,
                     },
         },
-        media_type="application/json; charset=utf-8"
     )
 @router.post("/erowid/random/experiences")
 async def fetch_random_experiences(request: FetchRandomExperiencesRequest, size_per_substance: int = 1):
