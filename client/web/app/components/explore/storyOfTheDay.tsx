@@ -28,7 +28,7 @@ export function StoryOfTheDay({ baseUrl }: { baseUrl: string }) {
       if (d.success) {
         setStory(d.experience);
         const expiry = new Date();
-        expiry.setHours(24, 0, 0, 0); // next midnight
+        expiry.setHours(24, 0, 0, 0);
         localStorage.setItem(
           CACHE_KEY,
           JSON.stringify({ expiry: expiry.getTime(), data: d.experience })

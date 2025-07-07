@@ -46,7 +46,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
   return (
     <div className="min-h-screen flex flex-col bg-background text-baseColor font-spacegrotesk">
       <nav className="fixed top-0 left-0 right-0 z-50 flex items-center bg-background justify-between px-4 py-4 border-b border-accent">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <button
             onClick={handleClose}
             className="md:hidden flex items-center justify-center text-baseColor hover:text-accent"

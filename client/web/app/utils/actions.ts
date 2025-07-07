@@ -139,3 +139,23 @@ export const fetchRandomStory = async (baseUrl: string, size = 1) => {
     experience: any | null;
   }>;
 };
+
+export async function fetchSubstanceCategories(
+  baseUrl: string,
+  substanceUrl: string
+) {
+  const res = await fetch(`${baseUrl}/erowid/experiences/categories`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url: substanceUrl }),
+  });
+  return res.json() as Promise<{
+    status: string;
+    has_experiences: boolean;
+    experiences_url: string | null;
+    categories: Record<
+      string,
+      { name: string; url: string; experience_count: number }
+    > | null;
+  }>;
+}

@@ -18,7 +18,7 @@ router = APIRouter()
 @router.post("/erowid/experiences/categories")
 async def fetch_substance_categories(request: FetchExperienceRequest):
     """
-    Fetch experiences for a given substance URL.
+    Fetch categories for a given substance URL.
     Returns success status, whether experiences exist, and their categories.
     """
     has_experiences, more_url = await check_experience_exists(request.url)

@@ -1,7 +1,11 @@
+import math
 import httpx
 from fastapi import APIRouter, HTTPException
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 import logging
+from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
+from typing import List, Dict, Any
+import re
 
 
 # Configure logging
@@ -86,7 +90,6 @@ async def fetch_experience_categories(url: str) -> dict:
                 if not row:
                     continue
                 
-                # Get category link and name
                 category_link = row.find('a', {'href': True})
                 if not category_link:
                     continue
@@ -94,11 +97,10 @@ async def fetch_experience_categories(url: str) -> dict:
                 category_name = category_link.find('u').text.strip()
                 category_url = f"https://www.erowid.org/experiences/subs/{category_link['href']}"
                 
-                # Get experience count from third b tag within []
                 count_cells = row.find_all('b')
                 exp_count = 0
-                if len(count_cells) >= 3:  # Check if we have at least 3 b tags
-                    count_text = count_cells[2].text.strip('[]')  # Get third b tag
+                if len(count_cells) >= 3:  
+                    count_text = count_cells[2].text.strip('[]')  
                     try:
                         exp_count = int(count_text)
                     except ValueError:
@@ -129,154 +131,149 @@ async def fetch_experience_categories(url: str) -> dict:
         )
 
 
-async def fetch_paginated_experiences(url: str, start: int = 0, max: int = 100) -> dict:
+_log = logging.getLogger("erowid.pagination")
+
+
+def _update_query(url: str, **new_q) -> str:
+    u = urlparse(url)
+    q = parse_qs(u.query, keep_blank_values=True)
+    q.update({k: [str(v)] for k, v in new_q.items()})
+    return urlunparse(u._replace(query=urlencode(q, doseq=True)))
+
+
+async def _soup(client: httpx.AsyncClient, url: str) -> BeautifulSoup:
+    r = await client.get(url)
+    r.raise_for_status()
+    return BeautifulSoup(r.text, "html.parser")
+
+
+async def fetch_paginated_experiences(
+    url: str,
+    start: int = 0,
+    max: int = 100,
+) -> Dict[str, Any]:
     """
-    Fetch and parse paginated experiences from Erowid
-    Handles both paginated and non-paginated pages
+    Scrape experiences from an Erowid category/search page.
+    - exp.cgi pages: honor ?Start & ?Max on the server
+    - exp_*.shtml pages: fetch once and slice locally
     """
-    pagination_logger = logging.getLogger("erowid.pagination")
     try:
         async with httpx.AsyncClient(verify=False, timeout=30.0) as client:
-            pagination_logger.info(f"Initial request to: {url}")
-            response = await client.get(url)
-            response.raise_for_status()
+            first_soup = await _soup(client, url)
 
-            soup = BeautifulSoup(response.text, 'html.parser')
-            pagination_logger.debug("Parsing initial page")
+            # ── detect if this is a CGI page (server pagination) ───────────
+            page_link = first_soup.select_one('a[href*="Start="]')
+            is_cgi = bool(page_link and "exp.cgi" in page_link["href"])
 
-            total_text = soup.find('div', class_='exp-list-page-title-sub')
-            if not total_text:
-                pagination_logger.error("Could not find experience count div")
-                raise ValueError("Could not find experience count")
-
-            total_count = int(total_text.text.strip('()').split()[0])
-            pagination_logger.info(f"Total experiences found: {total_count}")
-
-            exp_table = soup.find('table', class_='exp-list-table')
-            if not exp_table:
-                pagination_logger.error("Could not find experience table")
-                raise ValueError("Could not find results table")
-
-            next_button = soup.find('img', {'src': '/cgi-bin/search/images/buttonr.gif'})
-            has_pagination = bool(next_button and next_button.find_parent('a'))
-
-            pagination_logger.info(f"Page has pagination: {has_pagination}")
-
-            experiences = []
-            exp_rows = exp_table.find_all('tr', class_='exp-list-row')
-            pagination_logger.debug(f"Found {len(exp_rows)} experience rows in initial table")
-
-            if has_pagination:
-                pagination_logger.info(f"Processing paginated view - Start: {start}, Max: {max}")
-                form = soup.find('form', {'name': 'ResultsForm'})
-                if not form:
-                    pagination_logger.error("Could not find pagination form")
-                    raise ValueError("Could not find results form")
-
-                action_url = form.get('action')
-                if not action_url:
-                    pagination_logger.error("Could not find form action URL")
-                    raise ValueError("Could not find form action URL")
-
-                base_url = f"https://www.erowid.org{action_url}"
-                page_url = f"{base_url}?S={start}&C={max}"
-                pagination_logger.info(f"Fetching paginated results from: {page_url}")
-
-                page_response = await client.get(page_url)
-                page_soup = BeautifulSoup(page_response.text, 'html.parser')
-                exp_table = page_soup.find('table', class_='exp-list-table')
-                if not exp_table:
-                    pagination_logger.error("Could not find results table in paginated page")
-                    raise ValueError("Could not find results table in paginated page")
-
-                exp_rows = exp_table.find_all('tr', class_='exp-list-row')
-                pagination_logger.info(f"Found {len(exp_rows)} experiences in paginated view")
+            # -----------------------------------------------------------------
+            #   1) Build the page URL to fetch (CGI) or keep static URL (shtml)
+            # -----------------------------------------------------------------
+            if is_cgi:
+                pl_parsed = urlparse(page_link["href"])
+                q = parse_qs(pl_parsed.query)
+                s_id, c_id = q.get("S", [None])[0], q.get("C", [None])[0]
+                base_cgi = f"https://www.erowid.org{pl_parsed.path}"
+                page_url = _update_query(
+                    base_cgi,
+                    S=s_id,
+                    C=c_id,
+                    ShowViews=q.get("ShowViews", ["0"])[0],
+                    Cellar=q.get("Cellar", ["0"])[0],
+                    Start=start,
+                    Max=max,
+                )
+                soup = await _soup(client, page_url)
             else:
-                pagination_logger.info(f"Processing non-paginated view - Start: {start}, Max: {max}")
-                end = min(start + max, len(exp_rows))
-                pagination_logger.debug(f"Taking slice [{start}:{end}] from {len(exp_rows)} total rows")
-                exp_rows = exp_rows[start:end]
+                # static .shtml page – single fetch, slice rows locally
+                page_url = url
+                soup = first_soup
 
-            for row in exp_rows:
-                try:
-                    rating_img = row.find('img', alt=True)
-                    rating = rating_img['alt'] if rating_img else "Unrated"
+            # -----------------------------------------------------------------
+            #   2) Parse rows
+            # -----------------------------------------------------------------
+            table = soup.select_one("table.exp-list-table")
+            if not table:
+                return {
+                    "status": "success",
+                    "experiences": [],
+                    "pagination": {
+                        "current_page": 1,
+                        "total_pages": 1,
+                        "has_next": False,
+                        "next_url": None,
+                        "experiences_per_page": 0,
+                        "total_experiences": 0,
+                        "current_start": 0,
+                        "base_url": page_url,
+                    },
+                }
 
-                    title_cell = row.find('td', class_='exp-title')
-                    if not title_cell or not title_cell.find('a'):
-                        pagination_logger.warning("Skipping row - missing title cell or link")
-                        continue
+            rows = table.select('tr[class^="exp-list-row"]')
+            if not is_cgi:
+                rows = rows[start : start + max]  # local slice for static pages
 
-                    title = title_cell.find('a').text.strip()
-                    raw_href = title_cell.find('a')['href'].lstrip('/')
-
-                    # Normalize link
-                    if raw_href.startswith('experiences/'):
-                        exp_url = f"https://www.erowid.org/{raw_href}"
-                    else:
-                        exp_url = f"https://www.erowid.org/experiences/{raw_href}"
-
-                    author_cell = row.find('td', class_='exp-author')
-                    author = author_cell.text.strip() if author_cell else None
-
-                    substance_cell = row.find('td', class_='exp-substance')
-                    substance = substance_cell.text.strip() if substance_cell else None
-
-                    date_cell = row.find('td', class_='exp-pubdate')
-                    date = date_cell.text.strip() if date_cell else None
-
-                    experiences.append({
-                        "title": title,
-                        "url": exp_url,
-                        "author": author,
-                        "substance": substance,
-                        "rating": rating,
-                        "date": date
-                    })
-                except Exception as row_error:
-                    pagination_logger.error(f"Error parsing row: {str(row_error)}")
+            exps: List[Dict[str, str | None]] = []
+            for r in rows:
+                a_tag = r.select_one("td.exp-title a")
+                if not a_tag:
                     continue
+                raw_href = a_tag["href"].lstrip("/")
+                full_url = (
+                    f"https://www.erowid.org/{raw_href}"
+                    if raw_href.startswith("experiences/")
+                    else f"https://www.erowid.org/experiences/{raw_href}"
+                )
+                author_tag = r.select_one("td.exp-author")
+                substance_tag = r.select_one("td.exp-substance")
+                rating_tag = r.select_one("img[alt]")
+                date_tag = r.select_one("td.exp-pubdate")
 
-            pagination_logger.info(f"Successfully parsed {len(experiences)} experiences")
+                exps.append(
+                    {
+                        "title": a_tag.text.strip(),
+                        "url": full_url,
+                        "author": author_tag.text.strip() if author_tag else None,
+                        "substance": substance_tag.text.strip() if substance_tag else None,
+                        "rating": rating_tag["alt"] if rating_tag else "Unrated",
+                        "date": date_tag.text.strip() if date_tag else None,
+                    }
+                )
 
-            if has_pagination:
-                total_pages = (total_count + max - 1) // max
-                current_page = (start // max) + 1
-                has_next = current_page < total_pages
-                next_url = f"{base_url}?S={start + max}&C={max}" if has_next else None
+                
 
-                pagination = {
-                    "current_page": current_page,
+            # -----------------------------------------------------------------
+            #   3) Pagination metadata
+            # -----------------------------------------------------------------
+            if is_cgi:
+                total_div = soup.select_one("div.exp-list-page-title-sub")
+                total_cnt = int(re.search(r"\d+", total_div.text).group()) if total_div else len(exps)
+                total_pages = math.ceil(total_cnt / max)
+                has_next = start + max < total_cnt
+                next_url = _update_query(page_url, Start=start + max, Max=max) if has_next else None
+            else:
+                total_cnt = len(table.select('tr[class^="exp-list-row"]'))
+                total_pages = 1
+                has_next = False
+                next_url = None
+
+            return {
+                "status": "success",
+                "experiences": exps,
+                "pagination": {
+                    "current_page": start // max + 1 if is_cgi else 1,
                     "total_pages": total_pages,
                     "has_next": has_next,
                     "next_url": next_url,
-                    "experiences_per_page": max,
-                    "total_experiences": total_count,
+                    "experiences_per_page": max if is_cgi else len(exps),
+                    "total_experiences": total_cnt,
                     "current_start": start,
-                    "base_url": base_url
-                }
-            else:
-                pagination = {
-                    "current_page": 1,
-                    "total_pages": 1,
-                    "has_next": False,
-                    "next_url": None,
-                    "experiences_per_page": total_count,
-                    "total_experiences": total_count,
-                    "current_start": 0,
-                    "base_url": url
-                }
-
-            return {
-                "experiences": experiences,
-                "pagination": pagination
+                    "base_url": page_url,
+                },
             }
 
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
     except httpx.TimeoutException:
-        raise HTTPException(status_code=504, detail="Request timed out")
+        raise HTTPException(status_code=504, detail="Erowid request timed out")
     except httpx.HTTPError as e:
-        raise HTTPException(status_code=502, detail=f"Error fetching from Erowid: {str(e)}")
+        raise HTTPException(status_code=502, detail=f"Erowid fetch error: {e}")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error processing experiences: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Scraper error: {e}")

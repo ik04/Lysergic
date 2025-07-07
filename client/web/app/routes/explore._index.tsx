@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import Fuse from "fuse.js";
-import { useLoaderData } from "@remix-run/react";
+import { Link, useLoaderData, useSearchParams } from "@remix-run/react";
 import { Layout } from "~/components/layout/layout";
 import { fetchRandomStory, loadSubstances } from "~/utils/actions";
 import { getCachedSubstances, randrange } from "~/utils/utils";
+import { toast, Toaster } from "sonner";
+import { useNavigate } from "@remix-run/react";
 
 import {
   FlaskConical,
@@ -15,7 +17,6 @@ import {
   X,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { Loader } from "~/components/loader";
 import { StoryOfTheDay } from "~/components/explore/storyOfTheDay";
 
 const ICONS: Record<string, LucideIcon> = {
@@ -43,9 +44,22 @@ export default function ExplorePage() {
   const [substances, setSubstances] = useState<any>({});
   const [category, setCategory] = useState<string | null>(null);
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<any[]>([]);
   const [showAll, setShowAll] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [searchParams] = useSearchParams();
+  const alertMsg = searchParams.get("alert");
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (alertMsg) {
+      toast.error(
+        <div className="font-spacegrotesk text-base">{alertMsg}</div>
+      );
+
+      const params = new URLSearchParams(searchParams);
+      params.delete("alert");
+      navigate(`?${params.toString()}`, { replace: true });
+    }
+  }, [alertMsg, navigate, searchParams]);
 
   useEffect(() => {
     const cached: any = getCachedSubstances();
@@ -83,10 +97,9 @@ export default function ExplorePage() {
 
   const visibleItems = showAll ? filteredItems : filteredItems.slice(0, 20);
 
-  const storyGif = `/assets/trippy/pattern${randrange(1, 4)}.gif`;
-
   return (
     <Layout>
+      <Toaster />
       <div className="p-4 md:p-10 max-w-7xl mx-auto space-y-8 text-baseColor">
         <h1 className="italic text-accent text-lg md:text-xl font-silkscreen">
           “Not all those who wander are lost.”
@@ -143,10 +156,9 @@ export default function ExplorePage() {
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {visibleItems.map((item, idx) => (
-            <a
+            <Link
               key={idx}
-              href={item.info_url}
-              target="_blank"
+              to={`/explore/substance?url=${encodeURIComponent(item.info_url)}`}
               rel="noreferrer"
               className="aspect-square rounded-xl border border-accent 
                          flex flex-col items-center justify-center text-center1
@@ -154,7 +166,7 @@ export default function ExplorePage() {
             >
               <TileIcon category={item._cat} />
               <span className="truncate text-accent2">{item.name}</span>
-            </a>
+            </Link>
           ))}
           {filteredItems.length === 0 && (
             <p className="text-muted col-span-full text-center">
