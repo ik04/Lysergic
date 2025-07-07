@@ -61,6 +61,7 @@ async def fetch_experience_details(request: FetchExperienceDetailsRequest):
     """
     async with httpx.AsyncClient(verify=False, timeout=30.0) as client:
         response = await client.get(request.url)
+        response.encoding = 'utf-8'
         if response.status_code != 200:
             raise HTTPException(status_code=404, detail="Experience not found")
 
@@ -127,13 +128,6 @@ async def fetch_experience_details(request: FetchExperienceDetailsRequest):
             raw_text = content_div.get_text(separator="\n", strip=True)
 
             cleaned_text = re.sub(r"\n{2,}", "\n\n", raw_text)
-
-
-        encoded_text = (
-            base64.b64encode(cleaned_text.encode("utf-8")).decode("ascii")
-            if cleaned_text
-            else None
-        )
 
         return {
             "status": "success",
