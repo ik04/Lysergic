@@ -98,7 +98,7 @@ export default function SubstancePage() {
         </button>
 
         <h1 className="font-silkscreen text-accent text-xl md:text-3xl leading-tight py-3">
-          {getSubstanceNameFromUrl(url)} Categories
+          {getSubstanceNameFromUrl(url)} Experience Categories
         </h1>
 
         {loading && <Loader />}
