@@ -143,7 +143,7 @@ async def fetch_experience_details(request: FetchExperienceDetailsRequest):
                 "author": author,
                 "substance": substances,
                 "doses": doses,
-                "content": encoded_text,
+                "content": cleaned_text,
                 "metadata": metadata,
             },
         }

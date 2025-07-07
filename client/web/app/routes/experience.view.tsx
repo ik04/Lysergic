@@ -137,7 +137,7 @@ export default function ExperienceViewPage() {
             </button>
 
             <article className="prose prose-invert whitespace-pre-wrap max-w-none font-spacegrotesk md:leading-relaxed text-sm md:text-lg text-baseColor pb-10">
-              {atob(experience.content)}
+              {experience.content}
             </article>
           </>
         )}
