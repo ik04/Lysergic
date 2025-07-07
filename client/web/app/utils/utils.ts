@@ -63,3 +63,9 @@ export const setCachedSubstanceLinks = (links: string[]) => {
 export const randrange = (min: number, max: number) => {
   return Math.floor(Math.random() * (max - min)) + min;
 };
+
+export const highlightErowidNotes = (raw: string): string => {
+  return raw.replace(/\[Erowid Note:([\s\S]*?)\]/g, (match, noteContent) => {
+    return `<div class="text-accent font-bold my-2 font-spacegrotesk whitespace-pre-wrap">Erowid Note:${noteContent}</div>`;
+  });
+};

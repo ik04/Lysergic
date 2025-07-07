@@ -9,6 +9,8 @@ import {
 import { Layout } from "~/components/layout/view/layout";
 import { ArrowLeft, Bookmark } from "lucide-react";
 import { Loader } from "~/components/loader";
+import DOMPurify from "dompurify";
+import { highlightErowidNotes } from "~/utils/utils";
 
 export const loader = async () => {
   const baseUrl = process.env.SERVER_URL ?? "";
@@ -34,6 +36,12 @@ export default function ExperienceViewPage() {
     const load = async () => {
       try {
         const data = await fetchExperience(baseUrl || "", url);
+        const cleaned = DOMPurify.sanitize(
+          highlightErowidNotes(data.data?.content)
+        );
+        data.data.content = cleaned;
+        console.log(data.data.content);
+
         setExperience(data.data);
 
         const bookmarks = getBookmarks();
@@ -136,9 +144,10 @@ export default function ExperienceViewPage() {
               {isBookmarked ? "Bookmarked" : "Bookmark"}
             </button>
 
-            <article className="prose prose-invert whitespace-pre-wrap max-w-none font-spacegrotesk md:leading-relaxed text-sm md:text-lg text-baseColor pb-10">
-              {experience.content}
-            </article>
+            <article
+              dangerouslySetInnerHTML={{ __html: experience.content }}
+              className="prose prose-invert whitespace-pre-wrap max-w-none font-spacegrotesk md:leading-relaxed text-sm md:text-lg text-baseColor pb-10"
+            />
           </>
         )}
       </div>
