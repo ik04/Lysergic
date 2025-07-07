@@ -6,6 +6,7 @@ from api.models.fetch_experience_details_request import FetchExperienceDetailsRe
 from api.models.fetch_category_experiences_request import FetchCategoryExperiencesRequest
 from api.models.fetch_random_experiences_request import FetchRandomExperiencesRequest
 from api.utils.utils import check_experience_exists, fetch_experience_categories, fetch_paginated_experiences, logger
+from fastapi.responses import JSONResponse
 import random
 import asyncio
 from typing import List
@@ -129,18 +130,21 @@ async def fetch_experience_details(request: FetchExperienceDetailsRequest):
 
             cleaned_text = re.sub(r"\n{2,}", "\n\n", raw_text)
 
-        return {
-            "status": "success",
-            "data": {
-                "url": request.url,
-                "title": title,
-                "author": author,
-                "substance": substances,
-                "doses": doses,
-                "content": cleaned_text,
-                "metadata": metadata,
-            },
-        }
+        return JSONResponse(
+                content={
+                    "status": "success",
+                    "data": {
+                        "url": request.url,
+                        "title": title,
+                        "author": author,
+                        "substance": substances,
+                        "doses": doses,
+                        "content": cleaned_text,
+                        "metadata": metadata,
+                    },
+        },
+        media_type="application/json; charset=utf-8"
+    )
 @router.post("/erowid/random/experiences")
 async def fetch_random_experiences(request: FetchRandomExperiencesRequest, size_per_substance: int = 1):
     """
