@@ -10,6 +10,7 @@ import random
 import asyncio
 from typing import List
 import re
+import base64
 
 router = APIRouter()
 
@@ -127,6 +128,13 @@ async def fetch_experience_details(request: FetchExperienceDetailsRequest):
 
             cleaned_text = re.sub(r"\n{2,}", "\n\n", raw_text)
 
+
+        encoded_text = (
+            base64.b64encode(cleaned_text.encode("utf-8")).decode("ascii")
+            if cleaned_text
+            else None
+        )
+
         return {
             "status": "success",
             "data": {
@@ -135,7 +143,7 @@ async def fetch_experience_details(request: FetchExperienceDetailsRequest):
                 "author": author,
                 "substance": substances,
                 "doses": doses,
-                "content": cleaned_text,
+                "content": encoded_text,
                 "metadata": metadata,
             },
         }
