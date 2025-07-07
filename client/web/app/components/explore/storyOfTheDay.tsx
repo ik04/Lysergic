@@ -4,7 +4,7 @@ import { Loader } from "~/components/loader";
 import { randrange } from "~/utils/utils";
 import { Link } from "@remix-run/react";
 
-const DAILY_KEY = `story-${new Date().toISOString().slice(0, 10)}`;
+const CACHE_KEY = "story-of-the-day";
 const storyGif = `/assets/trippy/pattern${randrange(1, 4)}.gif`;
 
 export function StoryOfTheDay({ baseUrl }: { baseUrl: string }) {
@@ -12,17 +12,27 @@ export function StoryOfTheDay({ baseUrl }: { baseUrl: string }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const cached = localStorage.getItem(DAILY_KEY);
+    const cached = localStorage.getItem(CACHE_KEY);
     if (cached) {
-      setStory(JSON.parse(cached));
-      setLoading(false);
-      return;
+      try {
+        const { expiry, data } = JSON.parse(cached);
+        if (Date.now() < expiry && data) {
+          setStory(data);
+          setLoading(false);
+          return;
+        }
+      } catch {}
     }
 
     fetchRandomStory(baseUrl ?? "").then((d) => {
       if (d.success) {
         setStory(d.experience);
-        localStorage.setItem(DAILY_KEY, JSON.stringify(d.experience));
+        const expiry = new Date();
+        expiry.setHours(24, 0, 0, 0); // next midnight
+        localStorage.setItem(
+          CACHE_KEY,
+          JSON.stringify({ expiry: expiry.getTime(), data: d.experience })
+        );
       }
       setLoading(false);
     });
@@ -34,7 +44,7 @@ export function StoryOfTheDay({ baseUrl }: { baseUrl: string }) {
         Story of the day
       </h2>
       <Link
-        to={`/experience/view?url=${encodeURIComponent(story?.url)}`}
+        to={`/experience/view?url=${encodeURIComponent(story?.url ?? "")}`}
         className="relative flex flex-col md:flex-row md:items-center gap-4 rounded-2xl border border-dashed border-accent bg-background overflow-hidden"
       >
         <div className="md:flex-1 h-40 md:h-[20rem]">
@@ -44,7 +54,6 @@ export function StoryOfTheDay({ baseUrl }: { baseUrl: string }) {
             className="w-full h-full object-cover md:object-cover"
           />
         </div>
-
         <div className="flex-1 px-4 pb-4">
           {loading ? (
             <Loader />
