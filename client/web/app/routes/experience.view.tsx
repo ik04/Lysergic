@@ -40,7 +40,6 @@ export default function ExperienceViewPage() {
           highlightErowidNotes(data.data?.content)
         );
         data.data.content = cleaned;
-        console.log(data.data.content);
 
         setExperience(data.data);
 

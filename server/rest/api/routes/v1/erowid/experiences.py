@@ -11,7 +11,6 @@ import random
 import asyncio
 from typing import List
 import re
-import base64
 
 router = APIRouter()
 
