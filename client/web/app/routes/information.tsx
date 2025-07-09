@@ -100,14 +100,11 @@ export default function ExplorePage() {
   return (
     <Layout>
       <Toaster />
-      <div className="p-4 md:p-10 max-w-7xl mx-auto space-y-8 text-baseColor">
-        <h1 className="italic text-accent text-lg md:text-xl font-silkscreen">
-          “Not all those who wander are lost.”
-          <br />
-          <p className="font-spacegrotesk text-accent2">— J.R.R. Tolkien</p>
+      <div className="p-4 md:p-10 max-w-7xl mx-auto space-y-4 md:space-y-8 text-baseColor">
+        <h1 className="italic text-accent text-2xl md:text-4xl font-silkscreen">
+          Information
         </h1>
 
-        <StoryOfTheDay baseUrl={baseUrl} />
         <div className="flex flex-wrap gap-2">
           {categories.map((cat) => {
             const Icon = iconFor(cat);
@@ -158,7 +155,9 @@ export default function ExplorePage() {
           {visibleItems.map((item, idx) => (
             <Link
               key={idx}
-              to={`/explore/substance?url=${encodeURIComponent(item.info_url)}`}
+              to={`/information/substance?url=${encodeURIComponent(
+                item.info_url
+              )}`}
               rel="noreferrer"
               className="aspect-square rounded-xl border border-accent 
                          flex flex-col items-center justify-center text-center1
