@@ -11,10 +11,10 @@ type ThemeContextType = {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 const availableThemes: Theme[] = [
+  "vaporwave",
   "lysergic",
   "psychedelic",
   "cyberdelic",
-  "vaporwave",
   "alchemy",
 ];
 
