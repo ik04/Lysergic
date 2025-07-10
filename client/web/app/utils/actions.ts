@@ -164,9 +164,10 @@ export const fetchSubstanceInformation = async (
   baseUrl: string,
   infoUrl: string
 ) => {
-  const res = await fetch(
-    `${baseUrl}/erowid/information?url=${encodeURIComponent(infoUrl)}`
+  const response = await axios.post(
+    `${baseUrl}/erowid/information`,
+    { url: infoUrl },
+    { headers: { "Content-Type": "application/json" } }
   );
-  if (!res.ok) throw new Error("Failed to fetch substance information");
-  return res.json();
+  return response.data;
 };

@@ -17,6 +17,7 @@ app.add_middleware(
         f"{settings.API_V1_STR}/erowid/user",
         f"{settings.API_V1_STR}/erowid/substances",
         f"{settings.API_V1_STR}/erowid/category/experiences",
+        f"{settings.API_V1_STR}/erowid/information",
     ],
 
 )
