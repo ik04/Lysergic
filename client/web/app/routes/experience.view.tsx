@@ -25,7 +25,9 @@ export default function ExperienceViewPage() {
   const [loading, setLoading] = useState(true);
   const [experience, setExperience] = useState<any | null>(null);
   const [isBookmarked, setIsBookmarked] = useState(false);
-  const [substanceUrl, setSubstanceUrl] = useState<string | null>(null);
+  const [substanceLinks, setSubstanceLinks] = useState<
+    { name: string; url: string | null }[]
+  >([]);
 
   const url = searchParams.get("url");
 
@@ -50,40 +52,56 @@ export default function ExperienceViewPage() {
         );
         setIsBookmarked(isMatch);
 
-        // Match substance info_url
-        const cached = getCachedSubstances();
-        let substances =
-          cached &&
-          typeof cached === "object" &&
-          !Array.isArray(cached) &&
-          "data" in cached
-            ? (cached as { data: any }).data
-            : cached;
+        let substances = getCachedSubstances();
+        if (
+          substances &&
+          typeof substances === "object" &&
+          "data" in substances
+        ) {
+          substances = substances.data as unknown[];
+        }
+
         if (!substances) {
           await loadSubstances(baseUrl);
-          const cachedSubstances = getCachedSubstances();
+          const fresh = getCachedSubstances();
           substances =
-            cachedSubstances &&
-            typeof cachedSubstances === "object" &&
-            !Array.isArray(cachedSubstances) &&
-            "data" in cachedSubstances
-              ? (cachedSubstances as { data: any }).data
-              : cachedSubstances;
+            fresh && typeof fresh === "object" && "data" in fresh
+              ? (fresh.data as unknown[] | null)
+              : (fresh as unknown[] | null);
         }
 
         if (substances) {
           const allItems = Object.values(substances)
             .flat()
             .map((s: any) => s);
+          const names = data.data.substance
+            .split(/,|&|•/g)
+            .map((n: string) => n.trim())
+            .filter(Boolean);
 
-          const match = allItems.find(
-            (s: any) =>
-              s.name?.toLowerCase() === data.data.substance?.toLowerCase()
+          interface SubstanceItem {
+            name?: string;
+            info_url?: string | null;
+            [key: string]: any;
+          }
+
+          interface SubstanceLink {
+            name: string;
+            url: string | null;
+          }
+
+          const links: SubstanceLink[] = names.map(
+            (name: string): SubstanceLink => {
+              const match: SubstanceItem | undefined = allItems.find(
+                (s: SubstanceItem) =>
+                  s.name?.toLowerCase().replace(/\s+/g, "") ===
+                  name.toLowerCase().replace(/\s+/g, "")
+              );
+              return { name, url: match?.info_url ?? null };
+            }
           );
 
-          if (match?.info_url) {
-            setSubstanceUrl(match.info_url);
-          }
+          setSubstanceLinks(links);
         }
       } catch (err) {
         console.error("Failed to fetch experience:", err);
@@ -129,18 +147,23 @@ export default function ExperienceViewPage() {
             </h1>
             <p className="text-sm text-muted mb-4 font-spacegrotesk text-accent md:text-lg pl-1">
               by {experience.author} •{" "}
-              {substanceUrl ? (
-                <a
-                  href={`/information/substance?url=${encodeURIComponent(
-                    substanceUrl
-                  )}`}
-                  className="underline hover:text-accent2"
-                >
-                  {experience.substance}
-                </a>
-              ) : (
-                experience.substance
-              )}{" "}
+              {substanceLinks.map((item, idx) => (
+                <span key={idx}>
+                  {item.url ? (
+                    <a
+                      href={`/information/substance?url=${encodeURIComponent(
+                        item.url
+                      )}`}
+                      className="underline hover:text-accent2"
+                    >
+                      {item.name}
+                    </a>
+                  ) : (
+                    item.name
+                  )}
+                  {idx < substanceLinks.length - 1 && ", "}
+                </span>
+              ))}{" "}
               • {experience.metadata.published}
             </p>
 
