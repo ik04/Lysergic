@@ -5,6 +5,7 @@ services:
     build:
       context: ./server/rest
       dockerfile: Dockerfile
+    image: ik04/lysergic-backend:latest
     env_file:
       - ./server/rest/.env
     ports:
