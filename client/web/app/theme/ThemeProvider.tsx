@@ -10,7 +10,6 @@ type ThemeContextType = {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-// Add all your themes here:
 const availableThemes: Theme[] = [
   "lysergic",
   "psychedelic",
@@ -26,7 +25,7 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
       if (stored && availableThemes.includes(stored as Theme))
         return stored as Theme;
     }
-    return "psychedelic";
+    return "vaporwave";
   });
 
   useEffect(() => {
