@@ -1,3 +1,4 @@
+from urllib.parse import urlparse, urljoin
 import math
 import httpx
 from fastapi import APIRouter, HTTPException
@@ -277,3 +278,141 @@ async def fetch_paginated_experiences(
         raise HTTPException(status_code=502, detail=f"Erowid fetch error: {e}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Scraper error: {e}")
+
+
+def scrape_erowid_substance(html: str) -> Dict[str, Any]:
+    soup = BeautifulSoup(html, "html.parser")
+    data = {}
+
+    title_section = soup.select_one(".title-section .ts-substance-name")
+    data["substance_name"] = title_section.get_text(strip=True) if title_section else None
+
+    summary = {}
+    summary_card = soup.select_one(".summary-card-text-surround")
+    if summary_card:
+        def get_div_text(cls):
+            div = summary_card.select_one(f".{cls}")
+            return div.get_text(strip=True) if div else None
+
+        summary["common_names"] = get_div_text("sum-common-name")
+        summary["effects_classification"] = get_div_text("sum-effects")
+        summary["chemical_name"] = get_div_text("sum-chem-name")
+        summary["description"] = get_div_text("sum-description")
+    data["summary"] = summary
+
+    summary_links = []
+    for a in soup.select(".summary-card-icon-surround a"):
+        summary_links.append({
+            "title": a.img["alt"] if a.img and a.img.has_attr("alt") else None,
+            "href": a["href"],
+        })
+    data["summary_links"] = summary_links
+    sections = []
+    for links_list in soup.select(".links-list"):
+        section = {}
+        header = links_list.select_one(".ish")
+        section["section"] = header.get_text(" ", strip=True) if header else None
+        section["links"] = []
+        for link in links_list.select(".link-int a, .link-ext a"):
+            section["links"].append({
+                "title": link.get_text(strip=True),
+                "href": link["href"],
+            })
+        more = links_list.select_one(".more a")
+        if more:
+            section["links"].append({
+                "title": more.get_text(strip=True),
+                "href": more["href"],
+            })
+        if section["links"]:
+            sections.append(section)
+    data["sections"] = sections
+
+
+    offsite_sections = []
+    for links_list in soup.select(".index-links-ext .links-list"):
+        section = {}
+        header = links_list.select_one(".ish")
+        section["section"] = header.get_text(" ", strip=True) if header else None
+        section["links"] = []
+        for link in links_list.select(".link-int a, .link-ext a"):
+            section["links"].append({
+                "title": link.get_text(strip=True),
+                "href": link["href"],
+            })
+        if section["links"]:
+            offsite_sections.append(section)
+    data["offsite_sections"] = offsite_sections
+
+    return data
+
+
+
+def clean_section_title(title: str | None) -> str | None:
+    if not title:
+        return None
+    return title.replace("#", "").strip()
+
+def absolutize_href(href: str, base_url: str = "", section_name: str = None) -> str:
+    if not href:
+        return href
+    if href.startswith("http://") or href.startswith("https://"):
+        return href
+    if not base_url:
+        return f"https://www.erowid.org/{href.lstrip('/')}"
+    if href.startswith("/"):
+        return f"https://www.erowid.org{href}"
+    if section_name and section_name.lower().startswith("experience"):
+        parsed = urlparse(base_url)
+        base_path = parsed.path
+        if "/" in base_path:
+            base_dir = base_path.rsplit("/", 1)[0]
+        else:
+            base_dir = ""
+        if href.startswith("./"):
+            href = href[2:]
+        if not href.startswith("/"):
+            joined = f"{base_dir}/{href}" if base_dir else f"/{href}"
+            return f"https://www.erowid.org{joined}"
+    return urljoin(base_url, href)
+
+def is_valid_experience_link(href: str) -> bool:
+    return bool(re.match(r"^https://www\.erowid\.org/experiences/exp\.php\?ID=\d+$", href))
+
+def clean_links(links, base_url="", section_name=None):
+    cleaned = []
+    for link in links:
+        title = link.get("title", "")
+        if "MORE" in title:
+            title = "MORE"
+        href = absolutize_href(link.get("href", ""), base_url, section_name)
+        if section_name and section_name.lower().startswith("experience"):
+            if not is_valid_experience_link(href):
+                continue
+        cleaned.append({**link, "title": title, "href": href})
+    return cleaned
+
+def clean_data(data: dict, base_url: str = "") -> dict:
+    cleaned_sections = []
+    for section in data.get("sections", []):
+        section_name = clean_section_title(section.get("section"))
+        cleaned_sections.append({
+            "section": section_name,
+            "links": clean_links(section.get("links", []), base_url, section_name),
+        })
+    data["sections"] = cleaned_sections
+
+    data["summary_links"] = clean_links(data.get("summary_links", []), base_url)
+
+    if "offsite_sections" in data:
+        cleaned_offsite = []
+        for section in data["offsite_sections"]:
+            section_name = clean_section_title(section.get("section"))
+            cleaned_offsite.append({
+                "section": section_name,
+                "links": clean_links(section.get("links", []), base_url, section_name),
+            })
+        data["offsite_sections"] = cleaned_offsite
+
+    return data
+

@@ -15,6 +15,7 @@ import {
   Sprout,
   HelpCircle,
   X,
+  Info,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { StoryOfTheDay } from "~/components/explore/storyOfTheDay";
@@ -156,17 +157,32 @@ export default function ExplorePage() {
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {visibleItems.map((item, idx) => (
-            <Link
+            <div
               key={idx}
-              to={`/explore/substance?url=${encodeURIComponent(item.info_url)}`}
-              rel="noreferrer"
-              className="aspect-square rounded-xl border border-accent 
+              className="relative aspect-square rounded-xl border border-accent 
                          flex flex-col items-center justify-center text-center1
                          text-sm font-medium bg-transparent p-3"
             >
-              <TileIcon category={item._cat} />
-              <span className="truncate text-accent2">{item.name}</span>
-            </Link>
+              <Link
+                to={`/explore/substance?url=${encodeURIComponent(
+                  item.info_url
+                )}`}
+                rel="noreferrer"
+                className="flex flex-col items-center justify-center w-full h-full"
+              >
+                <TileIcon category={item._cat} />
+                <span className="truncate text-accent2">{item.name}</span>
+              </Link>
+              <Link
+                to={`/information/substance?url=${encodeURIComponent(
+                  item.info_url
+                )}`}
+                className="absolute top-2 right-2 text-accent2 hover:opacity-75"
+                title="More Info"
+              >
+                <Info className="w-4 h-4" />
+              </Link>
+            </div>
           ))}
           {filteredItems.length === 0 && (
             <p className="text-muted col-span-full text-center">

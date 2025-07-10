@@ -159,3 +159,14 @@ export async function fetchSubstanceCategories(
     > | null;
   }>;
 }
+
+export const fetchSubstanceInformation = async (
+  baseUrl: string,
+  infoUrl: string
+) => {
+  const res = await fetch(
+    `${baseUrl}/erowid/information?url=${encodeURIComponent(infoUrl)}`
+  );
+  if (!res.ok) throw new Error("Failed to fetch substance information");
+  return res.json();
+};

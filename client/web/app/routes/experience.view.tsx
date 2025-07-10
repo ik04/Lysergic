@@ -5,12 +5,13 @@ import {
   getBookmarks,
   removeBookmark,
   saveBookmark,
+  loadSubstances,
 } from "~/utils/actions";
 import { Layout } from "~/components/layout/view/layout";
 import { ArrowLeft, Bookmark } from "lucide-react";
 import { Loader } from "~/components/loader";
 import DOMPurify from "dompurify";
-import { highlightErowidNotes } from "~/utils/utils";
+import { highlightErowidNotes, getCachedSubstances } from "~/utils/utils";
 
 export const loader = async () => {
   const baseUrl = process.env.SERVER_URL ?? "";
@@ -24,6 +25,7 @@ export default function ExperienceViewPage() {
   const [loading, setLoading] = useState(true);
   const [experience, setExperience] = useState<any | null>(null);
   const [isBookmarked, setIsBookmarked] = useState(false);
+  const [substanceUrl, setSubstanceUrl] = useState<string | null>(null);
 
   const url = searchParams.get("url");
 
@@ -40,7 +42,6 @@ export default function ExperienceViewPage() {
           highlightErowidNotes(data.data?.content)
         );
         data.data.content = cleaned;
-
         setExperience(data.data);
 
         const bookmarks = getBookmarks();
@@ -48,6 +49,42 @@ export default function ExperienceViewPage() {
           (bookmark) => bookmark.url === data.data.url
         );
         setIsBookmarked(isMatch);
+
+        // Match substance info_url
+        const cached = getCachedSubstances();
+        let substances =
+          cached &&
+          typeof cached === "object" &&
+          !Array.isArray(cached) &&
+          "data" in cached
+            ? (cached as { data: any }).data
+            : cached;
+        if (!substances) {
+          await loadSubstances(baseUrl);
+          const cachedSubstances = getCachedSubstances();
+          substances =
+            cachedSubstances &&
+            typeof cachedSubstances === "object" &&
+            !Array.isArray(cachedSubstances) &&
+            "data" in cachedSubstances
+              ? (cachedSubstances as { data: any }).data
+              : cachedSubstances;
+        }
+
+        if (substances) {
+          const allItems = Object.values(substances)
+            .flat()
+            .map((s: any) => s);
+
+          const match = allItems.find(
+            (s: any) =>
+              s.name?.toLowerCase() === data.data.substance?.toLowerCase()
+          );
+
+          if (match?.info_url) {
+            setSubstanceUrl(match.info_url);
+          }
+        }
       } catch (err) {
         console.error("Failed to fetch experience:", err);
       } finally {
@@ -90,9 +127,21 @@ export default function ExperienceViewPage() {
             <h1 className="text-xl font-silkscreen md:text-3xl text-accent mb-1">
               {experience.title}
             </h1>
-            <p className="text-sm text-muted mb-4 text-accent md:text-lg pl-1">
-              by {experience.author} • {experience.substance} •{" "}
-              {experience.metadata.published}
+            <p className="text-sm text-muted mb-4 font-spacegrotesk text-accent md:text-lg pl-1">
+              by {experience.author} •{" "}
+              {substanceUrl ? (
+                <a
+                  href={`/information/substance?url=${encodeURIComponent(
+                    substanceUrl
+                  )}`}
+                  className="underline hover:text-accent2"
+                >
+                  {experience.substance}
+                </a>
+              ) : (
+                experience.substance
+              )}{" "}
+              • {experience.metadata.published}
             </p>
 
             <div className="text-xs text-muted mb-4 flex flex-wrap gap-x-4 gap-y-1 pl-1 md:text-lg font-spacegrotesk text-accent2">
