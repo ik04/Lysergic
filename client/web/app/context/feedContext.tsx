@@ -28,13 +28,22 @@ export const FeedProvider = ({ children }: { children: React.ReactNode }) => {
     await loadSubstances(baseUrl);
     await loadOrGenerateInfoUrls(baseUrl);
 
-    const { feed: fresh } = await generateFeedFromCache(baseUrl, 10);
+    let { feed: fresh } = await generateFeedFromCache(baseUrl, 40);
 
     const uniqueFeed = Array.from(
       new Map(fresh.map((f: any) => [f.url, f])).values()
     );
 
-    setFeed(uniqueFeed);
+    let finalFeed = uniqueFeed;
+    if (uniqueFeed.length < 20) {
+      const { feed: extra } = await generateFeedFromCache(
+        baseUrl,
+        20 - uniqueFeed.length
+      );
+      finalFeed = [...uniqueFeed, ...extra];
+    }
+
+    setFeed(finalFeed);
     setHasFetched(true);
     setLoading(false);
   };
