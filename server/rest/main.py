@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from core.config import settings
 from api.routes.v1.erowid import substances, experiences, information
-from api.routes.v1.tts import mozilla
+from api.routes.v1.tts import gtts
 from api.routes.v1 import base
 from cache_fastapi.cacheMiddleware import CacheMiddleware
 from cache_fastapi.Backends.redis_backend import RedisBackend
@@ -38,4 +38,4 @@ app.include_router(substances.router, prefix=settings.API_V1_STR)
 app.include_router(experiences.router, prefix=settings.API_V1_STR)
 app.include_router(information.router, prefix=settings.API_V1_STR)
 app.include_router(information.router, prefix=settings.API_V1_STR)
-app.include_router(mozilla.router, prefix=settings.API_V1_STR)
+app.include_router(gtts.router, prefix=settings.API_V1_STR)
