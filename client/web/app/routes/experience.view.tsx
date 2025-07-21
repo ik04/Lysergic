@@ -87,12 +87,14 @@ export default function ExperienceViewPage() {
   }, []);
 
   useEffect(() => {
+    // This logic is unchanged
     if (!url || !url.startsWith("http")) {
       navigate("/dashboard");
       return;
     }
 
     const load = async () => {
+      setLoading(true);
       try {
         stopTTS();
         const data = await fetchExperience(baseUrl || "", url);
@@ -103,10 +105,7 @@ export default function ExperienceViewPage() {
         setExperience(data.data);
 
         const bookmarks = getBookmarks();
-        const isMatch = bookmarks.some(
-          (bookmark) => bookmark.url === data.data.url
-        );
-        setIsBookmarked(isMatch);
+        setIsBookmarked(bookmarks.some((b) => b.url === data.data.url));
 
         let substances = getCachedSubstances();
         if (
@@ -120,42 +119,28 @@ export default function ExperienceViewPage() {
         if (!substances) {
           await loadSubstances(baseUrl);
           const fresh = getCachedSubstances();
-          substances =
-            fresh && typeof fresh === "object" && "data" in fresh
-              ? (fresh.data as unknown[] | null)
-              : (fresh as unknown[] | null);
+          if (fresh && typeof fresh === "object" && "data" in fresh) {
+            substances = fresh.data as unknown[];
+          } else {
+            substances = fresh as unknown[];
+          }
         }
 
         if (substances) {
-          const allItems = Object.values(substances)
-            .flat()
-            .map((s: any) => s);
+          const allItems = Object.values(substances).flat();
           const names = data.data.substance
             .split(/,|&|•/g)
             .map((n: string) => n.trim())
             .filter(Boolean);
 
-          interface SubstanceItem {
-            name?: string;
-            info_url?: string | null;
-            [key: string]: any;
-          }
-
-          interface SubstanceLink {
-            name: string;
-            url: string | null;
-          }
-
-          const links: SubstanceLink[] = names.map(
-            (name: string): SubstanceLink => {
-              const match: SubstanceItem | undefined = allItems.find(
-                (s: SubstanceItem) =>
-                  s.name?.toLowerCase().replace(/\s+/g, "") ===
-                  name.toLowerCase().replace(/\s+/g, "")
-              );
-              return { name, url: match?.info_url ?? null };
-            }
-          );
+          const links = names.map((name: string) => {
+            const match: any = allItems.find(
+              (s: any) =>
+                s.name?.toLowerCase().replace(/\s+/g, "") ===
+                name.toLowerCase().replace(/\s+/g, "")
+            );
+            return { name, url: match?.info_url ?? null };
+          });
 
           setSubstanceLinks(links);
         }
@@ -190,12 +175,14 @@ export default function ExperienceViewPage() {
 
   const findUkMaleVoice = (voices: SpeechSynthesisVoice[]) => {
     const checks = [
-      (v: SpeechSynthesisVoice) => v.name === "Google UK English Male", // Priority 1: Exact match
+      (v: SpeechSynthesisVoice) => v.name === "Google UK English Female",
+      (v: SpeechSynthesisVoice) => v.name === "Daniel",
       (v: SpeechSynthesisVoice) =>
-        v.lang === "en-GB" && v.name.toLowerCase().includes("male"), // Priority 2: Name and lang
-      (v: SpeechSynthesisVoice) => v.lang === "en-GB", // Priority 3: Just lang (often a male default on mobile)
+        v.lang === "en-GB" && v.name.toLowerCase().includes("male"),
+      (v: SpeechSynthesisVoice) => v.lang === "en-GB" && v.default,
+      (v: SpeechSynthesisVoice) => v.lang === "en-GB",
       (v: SpeechSynthesisVoice) =>
-        v.lang === "en-US" && v.name.toLowerCase().includes("male"), // Priority 4: Fallback to US Male
+        v.lang === "en-US" && v.name.toLowerCase().includes("male"),
     ];
     for (const check of checks) {
       const voice = voices.find(check);
@@ -209,10 +196,20 @@ export default function ExperienceViewPage() {
       return;
     }
     const synth = window.speechSynthesis;
+
+    // --- Start of Corrected Pause Logic ---
     if (isPlaying) {
-      isPaused ? synth.resume() : synth.pause();
+      if (isPaused) {
+        synth.resume();
+        setIsPaused(false); // Set state immediately
+      } else {
+        synth.pause();
+        setIsPaused(true); // Set state immediately
+      }
       return;
     }
+    // --- End of Corrected Pause Logic ---
+
     if (synth.speaking || synth.pending) {
       synth.cancel();
     }
@@ -252,12 +249,7 @@ export default function ExperienceViewPage() {
       u.rate = 1.0;
       u.pitch = 0.8;
       u.onend = () => playChunk(idx + 1);
-      u.onpause = () => {
-        if (isMounted.current) setIsPaused(true);
-      };
-      u.onresume = () => {
-        if (isMounted.current) setIsPaused(false);
-      };
+      // ** Unreliable onpause/onresume listeners removed **
       u.onerror = (e) => {
         console.error("TTS Utterance error, skipping chunk:", e);
         playChunk(idx + 1);
