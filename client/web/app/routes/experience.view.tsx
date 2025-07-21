@@ -1,5 +1,5 @@
 import { useLoaderData, useNavigate, useSearchParams } from "@remix-run/react";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import {
   fetchExperience,
   getBookmarks,
@@ -41,7 +41,6 @@ export default function ExperienceViewPage() {
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-
   const [voicesLoaded, setVoicesLoaded] = useState(false);
 
   const utteranceQueue = useRef<SpeechSynthesisUtterance[]>([]);
@@ -49,16 +48,25 @@ export default function ExperienceViewPage() {
 
   const url = searchParams.get("url");
 
+  const stopTTS = useCallback(() => {
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+    utteranceQueue.current = [];
+    if (isMounted.current) {
+      setIsPlaying(false);
+      setIsPaused(false);
+    }
+  }, []);
+
   useEffect(() => {
     isMounted.current = true;
+    // Use the robust stopTTS function for cleanup on unmount
     return () => {
       isMounted.current = false;
-      // Ensure speech is canceled on unmount
-      if (window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-      }
+      stopTTS();
     };
-  }, []);
+  }, [stopTTS]);
 
   useEffect(() => {
     if (!("speechSynthesis" in window)) {
@@ -70,6 +78,7 @@ export default function ExperienceViewPage() {
         setVoicesLoaded(true);
       }
     };
+    // Voices may already be loaded
     if (synth.getVoices().length > 0) {
       setVoicesLoaded(true);
     } else {
@@ -87,6 +96,7 @@ export default function ExperienceViewPage() {
 
     const load = async () => {
       setLoading(true);
+      // Stop any previous speech before loading new content
       stopTTS();
       try {
         const data = await fetchExperience(baseUrl || "", url);
@@ -98,14 +108,22 @@ export default function ExperienceViewPage() {
         const bookmarks = getBookmarks();
         setIsBookmarked(bookmarks.some((b) => b.url === data.data.url));
 
-        let substances = getCachedSubstances();
-        if (!substances) {
-          await loadSubstances(baseUrl);
-          substances = getCachedSubstances();
+        let substances: any = getCachedSubstances();
+        // Handle nested data object from cache
+        if (substances && "data" in substances) {
+          substances = substances.data;
         }
 
-        if (substances) {
-          const allItems = Object.values(substances).flat();
+        if (!substances) {
+          await loadSubstances(baseUrl);
+          let freshSubstances = getCachedSubstances();
+          if (freshSubstances && "data" in freshSubstances) {
+            substances = freshSubstances.data;
+          }
+        }
+
+        if (substances && Array.isArray(substances)) {
+          const allItems = substances.flat();
           const links = data.data.substance
             .split(/,|&|•/g)
             .map((n: string) => n.trim())
@@ -128,7 +146,7 @@ export default function ExperienceViewPage() {
     };
 
     load();
-  }, [url, navigate, baseUrl]);
+  }, [url, navigate, baseUrl, stopTTS]);
 
   const stripHtmlTags = (html: string): string => {
     if (typeof window === "undefined") return "";
@@ -137,39 +155,43 @@ export default function ExperienceViewPage() {
     return temp.textContent || temp.innerText || "";
   };
 
-  const playChunk = (index: number) => {
+  const playChunk = useCallback((index: number) => {
     if (index >= utteranceQueue.current.length) {
-      console.log("[TTS] All chunks finished.");
       if (isMounted.current) {
         setIsPlaying(false);
         setIsPaused(false);
       }
       return;
     }
-
     const utterance = utteranceQueue.current[index];
-    console.log(
-      `[TTS] Playing chunk ${index + 1}/${utteranceQueue.current.length}`
-    );
     window.speechSynthesis.speak(utterance);
+  }, []);
+
+  const findUkMaleVoice = (voices: SpeechSynthesisVoice[]) => {
+    const checks = [
+      (v: SpeechSynthesisVoice) => v.name === "Google UK English Male", // Priority 1: Exact match
+      (v: SpeechSynthesisVoice) =>
+        v.lang === "en-GB" && v.name.toLowerCase().includes("male"), // Priority 2: Name and lang
+      (v: SpeechSynthesisVoice) => v.lang === "en-GB", // Priority 3: Just lang (often a male default on mobile)
+      (v: SpeechSynthesisVoice) =>
+        v.lang === "en-US" && v.name.toLowerCase().includes("male"), // Priority 4: Fallback to US Male
+    ];
+    for (const check of checks) {
+      const voice = voices.find(check);
+      if (voice) return voice;
+    }
+    return null; // Let browser use its default
   };
 
   const handleTTS = () => {
     if (!experience || !("speechSynthesis" in window) || !voicesLoaded) {
       return;
     }
-
     const synth = window.speechSynthesis;
-
     if (isPlaying) {
-      if (isPaused) {
-        synth.resume();
-      } else {
-        synth.pause();
-      }
+      isPaused ? synth.resume() : synth.pause();
       return;
     }
-
     if (synth.speaking || synth.pending) {
       synth.cancel();
     }
@@ -192,7 +214,7 @@ export default function ExperienceViewPage() {
         break;
       }
       let chunk = textToChunk.slice(0, maxChunkLength);
-      let lastSentenceEnd = chunk.lastIndexOf(".");
+      const lastSentenceEnd = chunk.lastIndexOf(".");
       if (lastSentenceEnd > 0) {
         chunk = chunk.slice(0, lastSentenceEnd + 1);
       }
@@ -201,26 +223,14 @@ export default function ExperienceViewPage() {
     }
 
     const voices = synth.getVoices();
-    console.log("[TTS] Available voices:", voices);
-
-    const preferredVoice = voices.find(
-      (voice) =>
-        voice.lang.startsWith("en-GB") &&
-        (voice.name.includes("David") ||
-          voice.name.includes("Google UK English Male") ||
-          voice.name.toLowerCase().includes("male"))
-    );
+    const preferredVoice = findUkMaleVoice(voices);
 
     utteranceQueue.current = chunks.map((text, idx) => {
       const u = new SpeechSynthesisUtterance(text);
-      u.voice = preferredVoice || null;
+      u.voice = preferredVoice;
       u.rate = 1.0;
-      u.pitch = 0.7;
-
-      u.onend = () => {
-        playChunk(idx + 1);
-      };
-
+      u.pitch = 0.8;
+      u.onend = () => playChunk(idx + 1);
       u.onpause = () => {
         if (isMounted.current) setIsPaused(true);
       };
@@ -228,10 +238,7 @@ export default function ExperienceViewPage() {
         if (isMounted.current) setIsPaused(false);
       };
       u.onerror = (e) => {
-        console.error(
-          "[TTS] Utterance error, attempting to skip to next chunk:",
-          e
-        );
+        console.error("TTS Utterance error, skipping chunk:", e);
         playChunk(idx + 1);
       };
       return u;
@@ -241,30 +248,13 @@ export default function ExperienceViewPage() {
       setIsPlaying(true);
       setIsPaused(false);
     }
-
     playChunk(0);
-  };
-
-  const stopTTS = () => {
-    if ("speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-    }
-    utteranceQueue.current = [];
-    if (isMounted.current) {
-      setIsPlaying(false);
-      setIsPaused(false);
-    }
   };
 
   const handleBookmark = () => {
     if (!experience) return;
-    if (isBookmarked) {
-      removeBookmark(experience.url);
-      setIsBookmarked(false);
-    } else {
-      saveBookmark(experience);
-      setIsBookmarked(true);
-    }
+    isBookmarked ? removeBookmark(experience.url) : saveBookmark(experience);
+    setIsBookmarked(!isBookmarked);
   };
 
   const isTTSSupported =
