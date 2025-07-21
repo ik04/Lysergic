@@ -128,7 +128,6 @@ export default function ExperienceViewPage() {
     };
 
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [url, navigate, baseUrl]);
 
   const stripHtmlTags = (html: string): string => {
@@ -139,7 +138,6 @@ export default function ExperienceViewPage() {
   };
 
   const playChunk = (index: number) => {
-    // If the index is out of bounds, we've finished the queue.
     if (index >= utteranceQueue.current.length) {
       console.log("[TTS] All chunks finished.");
       if (isMounted.current) {
@@ -169,7 +167,6 @@ export default function ExperienceViewPage() {
       } else {
         synth.pause();
       }
-      // Use event listeners to update state
       return;
     }
 
@@ -204,24 +201,23 @@ export default function ExperienceViewPage() {
     }
 
     const voices = synth.getVoices();
+    console.log("[TTS] Available voices:", voices);
+
     const preferredVoice = voices.find(
       (voice) =>
-        voice.lang.startsWith("en") &&
+        voice.lang.startsWith("en-GB") &&
         (voice.name.includes("David") ||
-          voice.name.includes("Mark") ||
+          voice.name.includes("Google UK English Male") ||
           voice.name.toLowerCase().includes("male"))
     );
 
     utteranceQueue.current = chunks.map((text, idx) => {
       const u = new SpeechSynthesisUtterance(text);
       u.voice = preferredVoice || null;
-      u.rate = 1.0; // A normal rate is more reliable for events
-      u.pitch = 0.8;
+      u.rate = 1.0;
+      u.pitch = 0.7;
 
-      // NOTE: This event-driven approach depends on the 'onend' event,
-      // which can be inconsistent across browsers.
       u.onend = () => {
-        // When a chunk ends, play the next one.
         playChunk(idx + 1);
       };
 
@@ -236,7 +232,6 @@ export default function ExperienceViewPage() {
           "[TTS] Utterance error, attempting to skip to next chunk:",
           e
         );
-        // As a fallback, try to play the next chunk on error.
         playChunk(idx + 1);
       };
       return u;
@@ -247,7 +242,6 @@ export default function ExperienceViewPage() {
       setIsPaused(false);
     }
 
-    // Start the sequence by playing the first chunk.
     playChunk(0);
   };
 
