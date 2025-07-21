@@ -197,18 +197,16 @@ export default function ExperienceViewPage() {
     }
     const synth = window.speechSynthesis;
 
-    // --- Start of Corrected Pause Logic ---
     if (isPlaying) {
       if (isPaused) {
         synth.resume();
-        setIsPaused(false); // Set state immediately
+        setIsPaused(false);
       } else {
         synth.pause();
-        setIsPaused(true); // Set state immediately
+        setIsPaused(true);
       }
       return;
     }
-    // --- End of Corrected Pause Logic ---
 
     if (synth.speaking || synth.pending) {
       synth.cancel();
