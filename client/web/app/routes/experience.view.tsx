@@ -61,7 +61,6 @@ export default function ExperienceViewPage() {
 
   useEffect(() => {
     isMounted.current = true;
-    // Use the robust stopTTS function for cleanup on unmount
     return () => {
       isMounted.current = false;
       stopTTS();
@@ -78,7 +77,6 @@ export default function ExperienceViewPage() {
         setVoicesLoaded(true);
       }
     };
-    // Voices may already be loaded
     if (synth.getVoices().length > 0) {
       setVoicesLoaded(true);
     } else {
@@ -95,58 +93,81 @@ export default function ExperienceViewPage() {
     }
 
     const load = async () => {
-      setLoading(true);
-      // Stop any previous speech before loading new content
-      stopTTS();
       try {
+        stopTTS();
         const data = await fetchExperience(baseUrl || "", url);
         const cleaned = DOMPurify.sanitize(
           highlightErowidNotes(data.data?.content)
         );
         data.data.content = cleaned;
         setExperience(data.data);
-        const bookmarks = getBookmarks();
-        setIsBookmarked(bookmarks.some((b) => b.url === data.data.url));
 
-        let substances: any = getCachedSubstances();
-        // Handle nested data object from cache
-        if (substances && "data" in substances) {
-          substances = substances.data;
+        const bookmarks = getBookmarks();
+        const isMatch = bookmarks.some(
+          (bookmark) => bookmark.url === data.data.url
+        );
+        setIsBookmarked(isMatch);
+
+        let substances = getCachedSubstances();
+        if (
+          substances &&
+          typeof substances === "object" &&
+          "data" in substances
+        ) {
+          substances = substances.data as unknown[];
         }
 
         if (!substances) {
           await loadSubstances(baseUrl);
-          let freshSubstances = getCachedSubstances();
-          if (freshSubstances && "data" in freshSubstances) {
-            substances = freshSubstances.data;
-          }
+          const fresh = getCachedSubstances();
+          substances =
+            fresh && typeof fresh === "object" && "data" in fresh
+              ? (fresh.data as unknown[] | null)
+              : (fresh as unknown[] | null);
         }
 
-        if (substances && Array.isArray(substances)) {
-          const allItems = substances.flat();
-          const links = data.data.substance
+        if (substances) {
+          const allItems = Object.values(substances)
+            .flat()
+            .map((s: any) => s);
+          const names = data.data.substance
             .split(/,|&|•/g)
             .map((n: string) => n.trim())
-            .filter(Boolean)
-            .map((name: string) => {
-              const match: any = allItems.find(
-                (s: any) =>
+            .filter(Boolean);
+
+          interface SubstanceItem {
+            name?: string;
+            info_url?: string | null;
+            [key: string]: any;
+          }
+
+          interface SubstanceLink {
+            name: string;
+            url: string | null;
+          }
+
+          const links: SubstanceLink[] = names.map(
+            (name: string): SubstanceLink => {
+              const match: SubstanceItem | undefined = allItems.find(
+                (s: SubstanceItem) =>
                   s.name?.toLowerCase().replace(/\s+/g, "") ===
                   name.toLowerCase().replace(/\s+/g, "")
               );
               return { name, url: match?.info_url ?? null };
-            });
+            }
+          );
+
           setSubstanceLinks(links);
         }
       } catch (err) {
         console.error("Failed to fetch experience:", err);
       } finally {
-        if (isMounted.current) setLoading(false);
+        setLoading(false);
       }
     };
 
     load();
-  }, [url, navigate, baseUrl, stopTTS]);
+  }, [url, navigate, stopTTS, baseUrl]);
 
   const stripHtmlTags = (html: string): string => {
     if (typeof window === "undefined") return "";
@@ -180,7 +201,7 @@ export default function ExperienceViewPage() {
       const voice = voices.find(check);
       if (voice) return voice;
     }
-    return null; // Let browser use its default
+    return null;
   };
 
   const handleTTS = () => {
