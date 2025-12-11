@@ -19,7 +19,6 @@ app.add_middleware(
         f"{settings.API_V1_STR}/erowid/category/experiences",
         f"{settings.API_V1_STR}/erowid/information",
     ],
-    default_expire=None, 
 )
 
 app.add_middleware(

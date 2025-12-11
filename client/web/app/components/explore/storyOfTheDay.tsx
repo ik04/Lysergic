@@ -47,16 +47,23 @@ export function StoryOfTheDay({ baseUrl }: { baseUrl: string }) {
         to={`/experience/view?url=${encodeURIComponent(story?.url ?? "")}`}
         className="relative flex flex-col md:flex-row md:items-center gap-4 rounded-2xl border border-dashed border-accent bg-background overflow-hidden"
       >
-        <div className="md:flex-1 h-40 md:h-[20rem]">
+        <div className="md:flex-1 h-40 md:h-[20rem] relative">
           <img
             src={storyGif}
             alt=""
             className="w-full h-full object-cover md:object-cover"
           />
+          {loading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-background bg-opacity-70">
+              <Loader />
+            </div>
+          )}
         </div>
         <div className="flex-1 px-4 pb-4">
           {loading ? (
-            <Loader />
+            <div className="h-32 flex items-center justify-center">
+              <Loader />
+            </div>
           ) : story ? (
             <div className="space-y-2">
               <h3 className="font-silkscreen text-accent text-lg md:text-3xl">

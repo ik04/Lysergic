@@ -87,7 +87,6 @@ export default function ExperienceViewPage() {
   }, []);
 
   useEffect(() => {
-    // This logic is unchanged
     if (!url || !url.startsWith("http")) {
       navigate("/dashboard");
       return;
@@ -247,7 +246,6 @@ export default function ExperienceViewPage() {
       u.rate = 1.0;
       u.pitch = 0.8;
       u.onend = () => playChunk(idx + 1);
-      // ** Unreliable onpause/onresume listeners removed **
       u.onerror = (e) => {
         console.error("TTS Utterance error, skipping chunk:", e);
         playChunk(idx + 1);

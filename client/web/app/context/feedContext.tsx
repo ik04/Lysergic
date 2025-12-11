@@ -25,10 +25,12 @@ export const FeedProvider = ({ children }: { children: React.ReactNode }) => {
     if (hasFetched) return;
     setLoading(true);
 
-    await loadSubstances(baseUrl);
-    await loadOrGenerateInfoUrls(baseUrl);
+    await Promise.all([
+      loadSubstances(baseUrl),
+      loadOrGenerateInfoUrls(baseUrl),
+    ]);
 
-    let { feed: fresh } = await generateFeedFromCache(baseUrl, 40);
+    let { feed: fresh } = await generateFeedFromCache(baseUrl, 5);
 
     const uniqueFeed = Array.from(
       new Map(fresh.map((f: any) => [f.url, f])).values()
