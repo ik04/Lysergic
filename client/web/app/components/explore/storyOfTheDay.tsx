@@ -6,10 +6,45 @@ import { Link } from "@remix-run/react";
 
 const CACHE_KEY = "story-of-the-day";
 const storyGif = `/assets/trippy/pattern${randrange(1, 4)}.gif`;
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000;
 
 export function StoryOfTheDay({ baseUrl }: { baseUrl: string }) {
   const [story, setStory] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const fetchStoryWithRetry = async (retries = 0) => {
+    try {
+      const d = await fetchRandomStory(baseUrl ?? "");
+      if (d.success && d.experience) {
+        setStory(d.experience);
+        const expiry = new Date();
+        expiry.setHours(24, 0, 0, 0);
+        localStorage.setItem(
+          CACHE_KEY,
+          JSON.stringify({ expiry: expiry.getTime(), data: d.experience })
+        );
+        setLoading(false);
+        return;
+      }
+
+      if (retries < MAX_RETRIES) {
+        await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
+        await fetchStoryWithRetry(retries + 1);
+      } else {
+        setStory(null);
+        setLoading(false);
+      }
+    } catch (error) {
+      if (retries < MAX_RETRIES) {
+        await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
+        await fetchStoryWithRetry(retries + 1);
+      } else {
+        setStory(null);
+        setLoading(false);
+      }
+    }
+  };
 
   useEffect(() => {
     const cached = localStorage.getItem(CACHE_KEY);
@@ -24,18 +59,7 @@ export function StoryOfTheDay({ baseUrl }: { baseUrl: string }) {
       } catch {}
     }
 
-    fetchRandomStory(baseUrl ?? "").then((d) => {
-      if (d.success) {
-        setStory(d.experience);
-        const expiry = new Date();
-        expiry.setHours(24, 0, 0, 0);
-        localStorage.setItem(
-          CACHE_KEY,
-          JSON.stringify({ expiry: expiry.getTime(), data: d.experience })
-        );
-      }
-      setLoading(false);
-    });
+    fetchStoryWithRetry();
   }, [baseUrl]);
 
   return (
