@@ -51,12 +51,12 @@ export const FeedList = ({ baseUrl }: { baseUrl: string }) => {
 
       {loading && (
         <div className="p-3 text-center space-y-2">
-          <p className="font-silkscreen text-accent font-semibold italic animate-pulse md:text-2xl">
+          <p className="font-silkscreen text-accent transition-all ease-in-out font-semibold italic animate-pulse md:text-2xl">
             Loading Feed...
           </p>
 
           {showSlowNotice && (
-            <p className="text-sm text-accent2 font-silkscreen text-muted-foreground italic animate-pulse">
+            <p className="md:text-sm text-xs transition-all ease-in-out text-accent2 font-silkscreen text-muted-foreground italic animate-pulse">
               This might take a few seconds (crawling Erowid is a bit tedious.)
               :(
             </p>
