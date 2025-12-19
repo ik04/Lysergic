@@ -11,7 +11,7 @@ export const ExperienceCard = ({ exp }: { exp: any }) => {
         <h2 className="text-[13px] font-bold font-spacegrotesk text-accent2 leading-tight max-w-[70%]">
           {exp.title}
         </h2>
-        <span className="text-[10px] afont-bold text-right font-spacegrotesk capitalize text-accent2 whitespace-nowrap">
+        <span className="text-[10px] font-bold text-right font-spacegrotesk capitalize text-accent2 whitespace-nowrap">
           posted by{" "}
           {exp.author.length > 10
             ? `${exp.author.slice(0, 10)}...`

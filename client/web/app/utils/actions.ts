@@ -7,6 +7,7 @@ import {
   setCachedSubstanceLinks,
   setCachedSubstances,
 } from "./utils";
+import { toast } from "sonner";
 
 export const fetchSubstances = async <T = unknown[]>(
   baseUrl: string
@@ -25,6 +26,7 @@ export const loadSubstances = async (baseUrl: string) => {
   try {
     const response: any = await fetchSubstances(baseUrl);
     setCachedSubstances(response);
+    toast.success("Substance data loaded and cached successfully!");
   } catch (err) {
     console.error("Failed to fetch substances:", err);
   }

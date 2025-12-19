@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { useFeed } from "~/context/feedContext";
 import { ExperienceCard } from "~/components/dashboard/experienceCard";
 import { Loader } from "../loader";
+import { Toaster } from "sonner";
 
 export const FeedList = ({ baseUrl }: { baseUrl: string }) => {
   const { feed, loading, appendMore, refreshFeed } = useFeed();
@@ -25,11 +26,16 @@ export const FeedList = ({ baseUrl }: { baseUrl: string }) => {
 
   return (
     <>
+      <Toaster />
       {feed.map((exp, i) => (
         <ExperienceCard key={`${exp.url}-${i}`} exp={exp} />
       ))}
       <div ref={sentinelRef} />
-      {loading && <Loader />}
+      {loading && (
+        <p className="font-spacegrotesk text-accent2 animate-pulse">
+          Loading Feed...
+        </p>
+      )}
     </>
   );
 };
