@@ -32,7 +32,7 @@ export const FeedList = ({ baseUrl }: { baseUrl: string }) => {
       ))}
       <div ref={sentinelRef} />
       {loading && (
-        <p className="font-spacegrotesk text-accent2 animate-pulse">
+        <p className="font-spacegrotesk text-accent font-bold italic animate-pulse p-3 text-center md:text-2xl">
           Loading Feed...
         </p>
       )}
