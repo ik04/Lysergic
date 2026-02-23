@@ -1,5 +1,4 @@
 import { useLoaderData } from "@remix-run/react";
-import { Analytics } from "@vercel/analytics/remix";
 
 import { Layout } from "~/components/layout/layout";
 import { DashboardLoaderData } from "~/types/dashboard";
@@ -15,7 +14,6 @@ const Dashboard = () => {
   return (
     <Layout>
       <FeedList baseUrl={baseUrl} />
-      <Analytics />
     </Layout>
   );
 };
