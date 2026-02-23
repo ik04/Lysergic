@@ -15,6 +15,7 @@
     "@remix-run/react": "^2.16.8",
     "@remix-run/serve": "^2.16.8",
     "@supabase/supabase-js": "^2.50.2",
+    "@vercel/analytics": "^1.6.1",
     "axios": "^1.10.0",
     "dompurify": "^3.2.6",
     "dotenv": "^17.0.0",
