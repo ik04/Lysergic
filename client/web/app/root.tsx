@@ -7,6 +7,7 @@ import {
   useLoaderData,
 } from "@remix-run/react";
 import type { LinksFunction } from "@remix-run/node";
+import { Analytics } from "@vercel/analytics/remix";
 
 import "./tailwind.css";
 import { ThemeProvider } from "~/theme/ThemeProvider";
@@ -38,6 +39,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {children}
         <ScrollRestoration />
         <Scripts />
+        <Analytics />
       </body>
     </html>
   );
