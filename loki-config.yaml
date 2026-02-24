@@ -5,17 +5,11 @@ server:
 
 common:
   path_prefix: /loki
-
   storage:
     filesystem:
       chunks_directory: /loki/chunks
       rules_directory: /loki/rules
-
-  wal:
-    dir: /loki/wal # ✅ THIS FIXES THE PERMISSION ERROR
-
   replication_factor: 1
-
   ring:
     kvstore:
       store: inmemory
@@ -29,3 +23,8 @@ schema_config:
       index:
         prefix: index_
         period: 24h
+
+ingester:
+  wal:
+    enabled: true
+    dir: /loki/wal

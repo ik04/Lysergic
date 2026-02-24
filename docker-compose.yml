@@ -41,7 +41,7 @@ services:
     command: -config.file=/etc/loki/config.yaml
     volumes:
       - ./loki-config.yaml:/etc/loki/config.yaml
-      - loki_data:/loki # ✅ writable volume
+      - loki_data:/loki
     restart: unless-stopped
 
   promtail:
