@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 import httpx
 from bs4 import BeautifulSoup
 from typing import Dict, List
+from api.utils.cookie_manager import get_client, refresh as refresh_cookie
 
 router = APIRouter()
 
@@ -37,48 +38,50 @@ async def get_substances():
     """
     url = links['psychoactive']
     
-    try:
-        timeout = httpx.Timeout(30.0, connect=60.0)
-        async with httpx.AsyncClient(verify=False, timeout=timeout) as client:
-            response = await client.get(url)
-            response.raise_for_status()
+    for attempt in range(2):
+        try:
+            client = await get_client(timeout=httpx.Timeout(30.0, connect=60.0))
+            async with client:
+                response = await client.get(url)
+                response.raise_for_status()
+                
+            soup = BeautifulSoup(response.text, 'html.parser')
             
-        soup = BeautifulSoup(response.text, 'html.parser')
-        
-        categories = {}
-        
-        # Find all substance dropdowns
-        dropdown_tables = soup.find_all('table', {'class': 'substance-menus'})
-        for table in dropdown_tables:
-            selects = table.find_all('select')
+            categories = {}
             
-            for select in selects:
-                first_option = select.find('option')
-                if first_option:
-                    category_name = first_option.text.lower()
-                    # Clean up category name and use as key
-                    clean_category = category_name.replace(' ', '_').strip()
-                    if clean_category not in ['common_psychoactives']:
-                        categories[clean_category] = parse_dropdown_options(select, category_name)
-        
-        return {
-            "status": "success",
-            "data": categories,
-            "total_substances": sum(len(substances) for substances in categories.values())
-        }
+            # Find all substance dropdowns
+            dropdown_tables = soup.find_all('table', {'class': 'substance-menus'})
+            for table in dropdown_tables:
+                selects = table.find_all('select')
+                
+                for select in selects:
+                    first_option = select.find('option')
+                    if first_option:
+                        category_name = first_option.text.lower()
+                        # Clean up category name and use as key
+                        clean_category = category_name.replace(' ', '_').strip()
+                        if clean_category not in ['common_psychoactives']:
+                            categories[clean_category] = parse_dropdown_options(select, category_name)
+            
+            if not categories and attempt == 0:
+                await refresh_cookie()
+                continue
+            
+            return {
+                "status": "success",
+                "data": categories,
+                "total_substances": sum(len(substances) for substances in categories.values())
+            }
 
-    except httpx.TimeoutException:
-        raise HTTPException(
-            status_code=504,
-            detail="Request to Erowid timed out. Please try again later."
-        )
-    except httpx.HTTPError as e:
-        raise HTTPException(
-            status_code=502,
-            detail=f"Error fetching data from Erowid: {str(e)}"
-        )
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Internal server error: {str(e)}"
-        )
+        except (httpx.TimeoutException, httpx.HTTPError) as e:
+            if attempt == 0 and isinstance(e, httpx.HTTPError) and getattr(e.response, 'status_code', None) in (403, 502):
+                await refresh_cookie()
+                continue
+            if isinstance(e, httpx.TimeoutException):
+                raise HTTPException(status_code=504, detail="Request to Erowid timed out. Please try again later.")
+            raise HTTPException(status_code=502, detail=f"Error fetching data from Erowid: {str(e)}")
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Internal server error: {str(e)}"
+            )

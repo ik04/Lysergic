@@ -7,7 +7,7 @@ import logging
 from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 from typing import List, Dict, Any
 import re
-
+from api.utils.cookie_manager import get_client, refresh as refresh_cookie
 
 # Configure logging
 logging.basicConfig(
@@ -25,7 +25,8 @@ async def check_experience_exists(url: str) -> tuple[bool, str]:
         if not url or not url.startswith('https://www.erowid.org'):
             raise ValueError("Invalid Erowid URL")
 
-        async with httpx.AsyncClient(verify=False, timeout=30.0) as client:
+        client = await get_client(timeout=30.0)
+        async with client:
             response = await client.get(url)
             response.raise_for_status()
             
@@ -77,7 +78,8 @@ async def fetch_experience_categories(url: str) -> dict:
     Returns: Dictionary with category names, URLs and experience counts
     """
     try:
-        async with httpx.AsyncClient(verify=False, timeout=30.0) as client:
+        client = await get_client(timeout=30.0)
+        async with client:
             response = await client.get(url)
             response.raise_for_status()
             
@@ -159,7 +161,8 @@ async def fetch_paginated_experiences(
     - exp_*.shtml pages: fetch once and slice locally
     """
     try:
-        async with httpx.AsyncClient(verify=False, timeout=30.0) as client:
+        client = await get_client(timeout=30.0)
+        async with client:
             first_soup = await _soup(client, url)
 
             # ── detect if this is a CGI page (server pagination) ───────────

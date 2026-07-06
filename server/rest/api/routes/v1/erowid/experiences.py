@@ -6,6 +6,7 @@ from api.models.fetch_experience_details_request import FetchExperienceDetailsRe
 from api.models.fetch_category_experiences_request import FetchCategoryExperiencesRequest
 from api.models.fetch_random_experiences_request import FetchRandomExperiencesRequest
 from api.utils.utils import check_experience_exists, fetch_experience_categories, fetch_paginated_experiences, logger
+from api.utils.cookie_manager import get_client, refresh as refresh_cookie
 from fastapi.responses import JSONResponse
 import random
 import asyncio
@@ -59,7 +60,8 @@ async def fetch_experience_details(request: FetchExperienceDetailsRequest):
     Fetch details of a specific Erowid experience.
     Normalises content by converting <br>, <p>, and other tags to clean new‑line text.
     """
-    async with httpx.AsyncClient(verify=False, timeout=30.0) as client:
+    client = await get_client(timeout=30.0)
+    async with client:
         response = await client.get(request.url)
         response.encoding = 'cp1252'
         if response.status_code != 200:
@@ -229,7 +231,8 @@ async def fetch_user_experiences(username: str):
     logger.info(f"Fetching user experiences for username: {username} from {url}")
 
     try:
-        async with httpx.AsyncClient(verify=False, timeout=30.0) as client:
+        client = await get_client(timeout=30.0)
+        async with client:
             response = await client.get(url)
             response.raise_for_status()
             soup = BeautifulSoup(response.text, 'html.parser')

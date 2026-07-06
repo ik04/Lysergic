@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Body
 import httpx
 from api.utils.utils import scrape_erowid_substance, clean_data
+from api.utils.cookie_manager import get_client
 
 router = APIRouter()
 
@@ -10,7 +11,8 @@ async def get_information(data: dict = Body(...)):
     if not url:
         raise HTTPException(status_code=400, detail="Missing 'url' in request body")
     try:
-        async with httpx.AsyncClient(verify=False, timeout=15) as client:
+        client = await get_client(timeout=15)
+        async with client:
             resp = await client.get(url)
             resp.raise_for_status()
         info = scrape_erowid_substance(resp.text)

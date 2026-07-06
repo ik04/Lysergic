@@ -5,11 +5,13 @@ from prometheus_client import make_asgi_app, Counter, Histogram
 import time
 from core.config import settings
 from api.routes.v1.erowid import substances, experiences, information
+from api.utils.cookie_manager import init as init_cookies
 from api.routes.v1 import base
 from cache_fastapi.cacheMiddleware import CacheMiddleware
 from cache_fastapi.Backends.redis_backend import RedisBackend
 
 app = FastAPI(title=settings.PROJECT_NAME)
+init_cookies()
 
 # Prometheus metrics
 request_count = Counter(
