@@ -44,7 +44,7 @@ export default function ExplorePage() {
   const [substances, setSubstances] = useState<any>({});
   const [category, setCategory] = useState<string | null>(null);
   const [query, setQuery] = useState("");
-  const [showAll, setShowAll] = useState(false);
+  const [showAll, setShowAll] = useState(true);
   const [searchParams] = useSearchParams();
   const alertMsg = searchParams.get("alert");
   const navigate = useNavigate();
